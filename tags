@@ -1,9 +1,9 @@
 CLITERAL	memhold.h	/^        #define CLITERAL(type) type$/
 CLITERAL	memhold.h	/^        #define CLITERAL(type) (type)$/
-COLOR_ERROR	memhold.c	29
-COLOR_INFO	memhold.c	27
-COLOR_SUCCESS	memhold.c	30
-COLOR_WARN	memhold.c	28
+COLOR_ERROR	memhold.c	35
+COLOR_INFO	memhold.c	33
+COLOR_SUCCESS	memhold.c	36
+COLOR_WARN	memhold.c	34
 Color	memhold.h	98
 Color	memhold.h	104
 ConfigFlags	memhold.h	131
@@ -40,16 +40,17 @@ MEMHOLD_VERSION	memhold.h	11
 MEMHOLD_VERSION_MAJOR	memhold.h	8
 MEMHOLD_VERSION_MINOR	memhold.h	9
 MEMHOLD_VERSION_PATCH	memhold.h	10
+MEMHOLD_YAGNI	memhold.c	29
 MHAPI	memhold.h	20
 MHAPI	memhold.h	22
 MHAPI	memhold.h	27
 MH_CALLOC	memhold.h	/^        #define MH_CALLOC(n, sz) calloc(n, sz)$/
 MH_FREE	memhold.h	/^        #define MH_FREE(ptr) free(ptr)$/
 MH_MALLOC	memhold.h	/^        #define MH_MALLOC(sz) malloc(sz)$/
-MH_PID_TYPE	memhold.c	33
+MH_PID_TYPE	memhold.c	42
 MH_REALLOC	memhold.h	/^        #define MH_REALLOC(ptr, sz) realloc(ptr, s/
-Memhold	memhold.c	35
-Memhold	memhold.c	49
+Memhold	memhold.c	44
+Memhold	memhold.c	60
 Mmemhold	memhold.c	/^int main(int argc, char *argv[])$/
 RL_BOOL_TYPE	memhold.h	94
 SaveFileDataCallback	memhold.h	151
@@ -58,18 +59,19 @@ TraceLogCallback	memhold.h	149
 TraceLogLevel	memhold.h	145
 __declspec	memhold.h	/^                #define __declspec(x) __attribute_/
 a	memhold.h	103
-apiID	memhold.c	38
-apiVersion	memhold.c	37
+apiID	memhold.c	49
+apiVersion	memhold.c	50
 b	memhold.h	102
 bool	memhold.h	89
 bool	memhold.h	93
-cpuThreshold	memhold.c	40
-currentPID	memhold.c	43
+cpuThreshold	memhold.c	54
 false	memhold.h	91
-flagLog	memhold.c	48
+flagLog	memhold.c	46
 flagVerbose	memhold.c	47
 g	memhold.h	101
-memThreshold	memhold.c	41
+memThreshold	memhold.c	55
+memholdMainProcessPID	memhold.c	58
 r	memhold.h	100
-refreshSeconds	memhold.c	45
+refreshSeconds	memhold.c	52
 true	memhold.h	92
+userProcessPID	memhold.c	57

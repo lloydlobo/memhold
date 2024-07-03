@@ -19,7 +19,7 @@ CFLAGS += -std=c99 -O3
 # CFLAGS += -s
 
 # =0 or =1
-DFLAGS = -DMEMHOLD_SLOW=0
+DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
 
 LDLIBS = -lm -lpthread
 

@@ -19,6 +19,7 @@ Language:       Cpp
 # UseTab: Always
 ColumnLimit: 160
 IndentWidth: 4    # <number_of_spaces_per_tab> (multiple of TabWidth)
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 
 #------------------------------------------------------------------------------
 # Macros
@@ -30,7 +31,6 @@ IndentPPDirectives: BeforeHash # None | AfterHash | BeforeHash
 # Rest
 #------------------------------------------------------------------------------
 # PPIndentWidth: 4 # -1 | 1, 2, ...
-AllowShortIfStatementsOnASingleLine: Always
 BreakBeforeBraces: Allman # Custom | Attach | Linux | Mozilla | Stroustrup | Allman | Whitesmiths | GNU | Webkit
 PointerAlignment: Right # Left | Right | Middle
 
@@ -39,8 +39,8 @@ PointerAlignment: Right # Left | Right | Middle
 #------------------------------------------------------------------------------
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowShortBlocksOnASingleLine: Never
-AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: true # Choices: Never
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortEnumsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
 # AllowShortIfStatementsOnASingleLine: OnlyFirstIf

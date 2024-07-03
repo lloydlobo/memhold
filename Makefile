@@ -7,7 +7,8 @@
 CC = clang
 CFLAGS = -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare \
 	 -Wno-unused-parameter -Wno-unused-variable \
-	 -Wno-unused-but-set-variable -Wshadow -Werror
+	 -Wno-unused-but-set-variable -Wshadow 
+CFLAGS += -Werror
 CFLAGS += -DNDEBUG -ffast-math -march=native
 CFLAGS += -std=c99 -O3
 # CFLAGS += -std=c99 -ferror-limit=1 -gdwarf-4 -ggdb3 -O0
@@ -19,9 +20,13 @@ DFLAGS = -DMEMHOLD_SLOW=0
 LDLIBS = -lm -lpthread
 
 EXE = memhold
+PROCN = lua 
+# Process name to memhold
 
-SRCS = main.c
+SRCS = memhold.c
 OBJS = $(SRCS:.c=.o)
+
+
 
 # Usage: ~
 #   + make memhold
@@ -47,7 +52,7 @@ format:
 	clang-format -i --verbose *.{c,h}
 
 run:
-	./$(EXE)
+	@pgrep 'lua' | xargs -I _ ./$(EXE) _
 
 test:
 	@echo 'unimplemented' # clang test.c

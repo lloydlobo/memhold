@@ -1,33 +1,41 @@
 CLITERAL	memhold.h	/^        #define CLITERAL(type) type$/
 CLITERAL	memhold.h	/^        #define CLITERAL(type) (type)$/
-ConfigFlags	memhold.h	111
-FLAG_BORDERLESS_WINDOWED_MODE	memhold.h	108
-FLAG_FULLSCREEN_MODE	memhold.h	96
-FLAG_INTERLACED_HINT	memhold.h	110
-FLAG_MSAA_4X_HINT	memhold.h	109
-FLAG_VSYNC_HINT	memhold.h	95
-FLAG_WINDOW_ALWAYS_RUN	memhold.h	104
-FLAG_WINDOW_HIDDEN	memhold.h	99
-FLAG_WINDOW_HIGHDPI	memhold.h	106
-FLAG_WINDOW_MAXIMIZED	memhold.h	101
-FLAG_WINDOW_MINIMIZED	memhold.h	100
-FLAG_WINDOW_MOUSE_PASSTHROUGH	memhold.h	107
-FLAG_WINDOW_RESIZABLE	memhold.h	97
-FLAG_WINDOW_TOPMOST	memhold.h	103
-FLAG_WINDOW_TRANSPARENT	memhold.h	105
-FLAG_WINDOW_UNDECORATED	memhold.h	98
-FLAG_WINDOW_UNFOCUSED	memhold.h	102
-LOG_ALL	memhold.h	117
-LOG_DEBUG	memhold.h	119
-LOG_ERROR	memhold.h	122
-LOG_FATAL	memhold.h	123
-LOG_INFO	memhold.h	120
-LOG_NONE	memhold.h	124
-LOG_TRACE	memhold.h	118
-LOG_WARNING	memhold.h	121
-LoadFileDataCallback	memhold.h	130
-LoadFileTextCallback	memhold.h	132
+COLOR_ERROR	memhold.c	29
+COLOR_INFO	memhold.c	27
+COLOR_SUCCESS	memhold.c	30
+COLOR_WARN	memhold.c	28
+Color	memhold.h	98
+Color	memhold.h	104
+ConfigFlags	memhold.h	131
+FLAG_BORDERLESS_WINDOWED_MODE	memhold.h	128
+FLAG_FULLSCREEN_MODE	memhold.h	116
+FLAG_INTERLACED_HINT	memhold.h	130
+FLAG_MSAA_4X_HINT	memhold.h	129
+FLAG_VSYNC_HINT	memhold.h	115
+FLAG_WINDOW_ALWAYS_RUN	memhold.h	124
+FLAG_WINDOW_HIDDEN	memhold.h	119
+FLAG_WINDOW_HIGHDPI	memhold.h	126
+FLAG_WINDOW_MAXIMIZED	memhold.h	121
+FLAG_WINDOW_MINIMIZED	memhold.h	120
+FLAG_WINDOW_MOUSE_PASSTHROUGH	memhold.h	127
+FLAG_WINDOW_RESIZABLE	memhold.h	117
+FLAG_WINDOW_TOPMOST	memhold.h	123
+FLAG_WINDOW_TRANSPARENT	memhold.h	125
+FLAG_WINDOW_UNDECORATED	memhold.h	118
+FLAG_WINDOW_UNFOCUSED	memhold.h	122
+InitMemhold	memhold.c	/^MHAPI Memhold InitMemhold(void)$/
+LOG_ALL	memhold.h	137
+LOG_DEBUG	memhold.h	139
+LOG_ERROR	memhold.h	142
+LOG_FATAL	memhold.h	143
+LOG_INFO	memhold.h	140
+LOG_NONE	memhold.h	144
+LOG_TRACE	memhold.h	138
+LOG_WARNING	memhold.h	141
+LoadFileDataCallback	memhold.h	150
+LoadFileTextCallback	memhold.h	152
 MEMHOLD_H	memhold.h	2
+MEMHOLD_SLOW	memhold.c	23
 MEMHOLD_VERSION	memhold.h	11
 MEMHOLD_VERSION_MAJOR	memhold.h	8
 MEMHOLD_VERSION_MINOR	memhold.h	9
@@ -38,13 +46,30 @@ MHAPI	memhold.h	27
 MH_CALLOC	memhold.h	/^        #define MH_CALLOC(n, sz) calloc(n, sz)$/
 MH_FREE	memhold.h	/^        #define MH_FREE(ptr) free(ptr)$/
 MH_MALLOC	memhold.h	/^        #define MH_MALLOC(sz) malloc(sz)$/
+MH_PID_TYPE	memhold.c	33
 MH_REALLOC	memhold.h	/^        #define MH_REALLOC(ptr, sz) realloc(ptr, s/
-Memhold_API	memhold.c	11
-Memhold_API	memhold.c	14
+Memhold	memhold.c	35
+Memhold	memhold.c	49
 Mmemhold	memhold.c	/^int main(int argc, char *argv[])$/
-SaveFileDataCallback	memhold.h	131
-SaveFileTextCallback	memhold.h	133
-TraceLogCallback	memhold.h	129
-TraceLogLevel	memhold.h	125
+RL_BOOL_TYPE	memhold.h	94
+SaveFileDataCallback	memhold.h	151
+SaveFileTextCallback	memhold.h	153
+TraceLogCallback	memhold.h	149
+TraceLogLevel	memhold.h	145
 __declspec	memhold.h	/^                #define __declspec(x) __attribute_/
-id	memhold.c	13
+a	memhold.h	103
+apiID	memhold.c	38
+apiVersion	memhold.c	37
+b	memhold.h	102
+bool	memhold.h	89
+bool	memhold.h	93
+cpuThreshold	memhold.c	40
+currentPID	memhold.c	43
+false	memhold.h	91
+flagLog	memhold.c	48
+flagVerbose	memhold.c	47
+g	memhold.h	101
+memThreshold	memhold.c	41
+r	memhold.h	100
+refreshSeconds	memhold.c	45
+true	memhold.h	92

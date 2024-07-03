@@ -2,6 +2,10 @@
 
 # TOP
 
+# debug: NOTE(Lloyd): Use -g or -ggdb3 flag in CFLAGS. Omit -s flag.
+#	$ gf2 ./memhold $(pgrep emacs)
+# 	$ gdb ./memhold $(pgrep emacs)
+
 .PHONY: all clean test
 
 CC = clang
@@ -20,7 +24,7 @@ DFLAGS = -DMEMHOLD_SLOW=0
 LDLIBS = -lm -lpthread
 
 EXE = memhold
-PROCN = lua 
+PROCN = waybar 
 # Process name to memhold
 
 SRCS = memhold.c
@@ -51,12 +55,14 @@ ctags:
 format:
 	clang-format -i --verbose *.{c,h}
 
+# $ make run PROCN=tmux
 run:
-	@pgrep 'lua' | xargs -I _ ./$(EXE) _
+	@pgrep $(PROCN) | xargs -I _ ./$(EXE) _
 
 test:
 	@echo 'unimplemented' # clang test.c
 
+# $ make watch_build_run PROCN=btop
 watch_build_run:
 	./scripts/watch_build_run.sh
 

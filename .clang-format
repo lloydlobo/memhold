@@ -1,0 +1,39 @@
+# file: .clang-format
+
+# TOP
+
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+#
+# $ clang-format --style LLVM --dump-config >> .clang-format
+---
+
+BasedOnStyle: LLVM # LLVM | Google | Chromium | Mozilla | WebKit | Microsoft | GNU | InheritParentConfig
+
+---
+Language:       Cpp
+
+#------------------------------------------------------------------------------
+# Essential
+#------------------------------------------------------------------------------
+# TabWidth:  4    #  <number_of_spaces_per_tab> character represents in the formatted output. It essentially defines the size or width of a tab stop. Since IndentWidth is a multiple of TabWidth, clang-format will insert exactly the number of spaces required for each indentation level.
+# UseTab: Always
+ColumnLimit: 160
+IndentWidth: 4    # <number_of_spaces_per_tab> (multiple of TabWidth)
+
+#------------------------------------------------------------------------------
+# Macros
+#------------------------------------------------------------------------------
+AlignConsecutiveMacros: true
+IndentPPDirectives: BeforeHash # None | AfterHash | BeforeHash
+
+#------------------------------------------------------------------------------
+# Rest
+#------------------------------------------------------------------------------
+# PPIndentWidth: 4 # -1 | 1, 2, ...
+AllowShortIfStatementsOnASingleLine: Always
+BreakBeforeBraces: Allman # Custom | Attach | Linux | Mozilla | Stroustrup | Allman | Whitesmiths | GNU | Webkit
+PointerAlignment: Right # Left | Right | Middle
+...
+
+# BOT
+

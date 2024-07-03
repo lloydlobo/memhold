@@ -1,0 +1,42 @@
+Benchmark 1: make -i -B memhold
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+  Time (abs ≡):        160.6 ms               [User: 86.4 ms, System: 74.0 ms]
+ 
+Benchmark 1: make -iB memhold
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow   -c -o main.o main.c
+clang -std=c99 -O3 -s -DNDEBUG -ffast-math -march=native -Wall -Werror -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -o memhold main.o -lm -lpthread
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+  Time (abs ≡):        159.3 ms               [User: 100.3 ms, System: 59.6 ms]
+ 
+Benchmark 1: make -iB memhold
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -Werror -DNDEBUG -ffast-math -march=native -std=c99 -O3 -o memhold main.o -lm -lpthread -DMEMHOLD_SLOW=0
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -Werror -DNDEBUG -ffast-math -march=native -std=c99 -O3 -o memhold main.o -lm -lpthread -DMEMHOLD_SLOW=0
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+make[1]: Entering directory '/home/lloyd/p/painpoints/memhold'
+clang -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wshadow -Werror -DNDEBUG -ffast-math -march=native -std=c99 -O3 -o memhold main.o -lm -lpthread -DMEMHOLD_SLOW=0
+make[1]: Leaving directory '/home/lloyd/p/painpoints/memhold'
+  Time (abs ≡):        100.2 ms               [User: 60.1 ms, System: 40.4 ms]
+ 

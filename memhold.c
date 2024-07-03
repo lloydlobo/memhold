@@ -4,15 +4,19 @@
 
 #include "memhold.h" // Declares module functions
 
-#include <assert.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h> // Required for: [Unix only] fork, wait, waitpid - basic process management
-/* SYNOPSIS @load "fork" pid = fork() ret = waitpid(pid) ret = wait(); */
+#include <assert.h> // Required for: assert(),
+// #include <signal.h>
+// #include <stdarg.h>
+// #include <stddef.h>
+#include <stdio.h>  // Required for: printf(), fprintf(), sprintf(), stderr, stdout,
+#include <stdlib.h> // Required for: atoi(), exit(),
+#include <string.h> // Required for: strcmp(),
+#include <sys/wait.h>
+#include <unistd.h> // Required for: fork(), getpid(), sleep(),... [UNIX only lib]
+
+/* unistd.h
+ * [Unix only] fork, wait, waitpid - basic process management
+ * SYNOPSIS @load "fork" pid = fork() ret = waitpid(pid) ret = wait(); */
 
 #if defined(MEMHOLD_SLOW)
     // Debugging: ~
@@ -74,7 +78,7 @@ MHAPI Memhold InitMemhold(void)
         .refreshSeconds = 2.0f,
 
         .cpuThreshold = 50.0f,
-        .memThreshold = 500000,
+        .memThreshold = MH_MEMORY_THRESHOLD, //>10240kb Max: 500000kb
 
         .userProcessPID        = 0,
         .memholdMainProcessPID = 0,

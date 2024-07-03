@@ -27,9 +27,12 @@
         #define MHAPI // Functions defined as 'extern' by default (implicit specifiers)
     #endif
 
-    //----------------------------------------------------------------------------------
-    // Some basic Defines
-    //----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+// Some basic Defines
+//----------------------------------------------------------------------------------
+
+    // Memory threshold in kilobytes (for example, 10 MB)
+    #define MH_MEMORY_THRESHOLD 10240
 
     // NOTE(Lloyd): The following is ported from raylib.h
 

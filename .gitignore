@@ -1,5 +1,9 @@
+# file: .gitignore
+
+memhold
+memhold.o
 
 *.un~
-memhold
+*.org~
 tags.bak
-memhold.o
+

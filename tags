@@ -1,13 +1,9 @@
 CLITERAL	memhold.h	/^        #define CLITERAL(type) type$/
 CLITERAL	memhold.h	/^        #define CLITERAL(type) (type)$/
-COLOR_ERROR	memhold.c	33
-COLOR_ERROR	memhold_0.1_0.c	39
-COLOR_INFO	memhold.c	31
-COLOR_INFO	memhold_0.1_0.c	37
-COLOR_SUCCESS	memhold.c	34
-COLOR_SUCCESS	memhold_0.1_0.c	40
-COLOR_WARN	memhold.c	32
-COLOR_WARN	memhold_0.1_0.c	38
+COLOR_ERROR	memhold.c	54
+COLOR_INFO	memhold.c	52
+COLOR_SUCCESS	memhold.c	55
+COLOR_WARN	memhold.c	53
 Color	memhold.h	101
 Color	memhold.h	107
 ConfigFlags	memhold.h	134
@@ -27,8 +23,9 @@ FLAG_WINDOW_TOPMOST	memhold.h	126
 FLAG_WINDOW_TRANSPARENT	memhold.h	128
 FLAG_WINDOW_UNDECORATED	memhold.h	121
 FLAG_WINDOW_UNFOCUSED	memhold.h	125
+GetCpuUsage	memhold.c	/^MHAPI double GetCpuUsage(MH_PID_TYPE pid)$/
+GetMemUsage	memhold.c	/^MHAPI long GetMemUsage(MH_PID_TYPE pid)$/
 InitMemhold	memhold.c	/^MHAPI Memhold InitMemhold(void)$/
-InitMemhold	memhold_0.1_0.c	/^MHAPI Memhold InitMemhold(void)$/
 LOG_ALL	memhold.h	140
 LOG_DEBUG	memhold.h	142
 LOG_ERROR	memhold.h	145
@@ -39,16 +36,14 @@ LOG_TRACE	memhold.h	141
 LOG_WARNING	memhold.h	144
 LoadFileDataCallback	memhold.h	153
 LoadFileTextCallback	memhold.h	155
-MAX_MAIN_LOOP_COUNT	memhold.c	40
+MAX_MAIN_LOOP_COUNT	memhold.c	61
 MEMHOLD_H	memhold.h	2
-MEMHOLD_SLOW	memhold.c	19
-MEMHOLD_SLOW	memhold_0.1_0.c	27
+MEMHOLD_SLOW	memhold.c	40
 MEMHOLD_VERSION	memhold.h	11
 MEMHOLD_VERSION_MAJOR	memhold.h	8
 MEMHOLD_VERSION_MINOR	memhold.h	9
 MEMHOLD_VERSION_PATCH	memhold.h	10
-MEMHOLD_YAGNI	memhold.c	24
-MEMHOLD_YAGNI	memhold_0.1_0.c	33
+MEMHOLD_YAGNI	memhold.c	45
 MHAPI	memhold.h	20
 MHAPI	memhold.h	22
 MHAPI	memhold.h	27
@@ -56,52 +51,35 @@ MH_CALLOC	memhold.h	/^        #define MH_CALLOC(n, sz) calloc(n, sz)$/
 MH_FREE	memhold.h	/^        #define MH_FREE(ptr) free(ptr)$/
 MH_MALLOC	memhold.h	/^        #define MH_MALLOC(sz) malloc(sz)$/
 MH_MEMORY_THRESHOLD	memhold.h	35
-MH_PID_TYPE	memhold.c	48
-MH_PID_TYPE	memhold_0.1_0.c	46
+MH_PID_TYPE	memhold.c	70
 MH_REALLOC	memhold.h	/^        #define MH_REALLOC(ptr, sz) realloc(ptr, s/
-Memhold	memhold.c	50
-Memhold	memhold.c	66
-Memhold	memhold_0.1_0.c	48
-Memhold	memhold_0.1_0.c	64
+Memhold	memhold.c	72
+Memhold	memhold.c	88
 Mmemhold	memhold.c	/^int main(int argc, char *argv[])$/
-Mmemhold_0.1_0	memhold_0.1_0.c	/^int main(int argc, char *argv[])$/
 RL_BOOL_TYPE	memhold.h	97
 RunMain	memhold.c	/^int RunMain()$/
-RunMain	memhold_0.1_0.c	/^int RunMain()$/
 SaveFileDataCallback	memhold.h	154
 SaveFileTextCallback	memhold.h	156
 TraceLogCallback	memhold.h	152
 TraceLogLevel	memhold.h	148
 __declspec	memhold.h	/^                #define __declspec(x) __attribute_/
 a	memhold.h	106
-apiID	memhold.c	55
-apiID	memhold_0.1_0.c	53
-apiVersion	memhold.c	56
-apiVersion	memhold_0.1_0.c	54
+apiID	memhold.c	77
+apiVersion	memhold.c	78
 b	memhold.h	105
 bool	memhold.h	92
 bool	memhold.h	96
-cpuThreshold	memhold.c	60
-cpuThreshold	memhold_0.1_0.c	58
+cpuThreshold	memhold.c	82
 false	memhold.h	94
-flagLog	memhold.c	52
-flagLog	memhold_0.1_0.c	50
-flagVerbose	memhold.c	53
-flagVerbose	memhold_0.1_0.c	51
+flagLog	memhold.c	74
+flagVerbose	memhold.c	75
 g	memhold.h	104
-memThreshold	memhold.c	61
-memThreshold	memhold_0.1_0.c	59
-memhold	memhold.c	72
-memhold	memhold_0.1_0.c	70
-memholdMainProcessPID	memhold.c	64
-memholdMainProcessPID	memhold_0.1_0.c	62
-procPID	memhold.c	73
-procPID	memhold_0.1_0.c	71
+memThreshold	memhold.c	83
+memhold	memhold.c	94
+memholdMainProcessPID	memhold.c	86
+procPID	memhold.c	95
 r	memhold.h	103
-refreshSeconds	memhold.c	58
-refreshSeconds	memhold_0.1_0.c	56
-tmpArgVerbose	memhold.c	74
-tmpArgVerbose	memhold_0.1_0.c	72
+refreshSeconds	memhold.c	80
+tmpArgVerbose	memhold.c	96
 true	memhold.h	95
-userProcessPID	memhold.c	63
-userProcessPID	memhold_0.1_0.c	61
+userProcessPID	memhold.c	85

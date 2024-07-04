@@ -1,6 +1,27 @@
-// TOP
 
-// file: main.c
+/*file: main.c*************************************************************************************
+ *
+ *
+ *  memhold 0.1
+ *
+ *
+ *  20240704144247UTC
+ *      ==48754== Command: ./memhold 2007
+ *      [ INFO ]  took 8.00s
+ *      ==48754== HEAP SUMMARY:
+ *      ==48754==     in use at exit: 0 bytes in 0 blocks
+ *      ==48754==   total heap usage: 9 allocs, 9 frees, 7,008 bytes allocated
+ *      ==48754== All heap blocks were freed -- no leaks are possible
+ *      ==48754== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+ *
+ *      ==46954== Command: ./memhold 2007
+ *      [ INFO ]  took 8.00s
+ *      ==46954== I refs:        285,880
+ *
+ *
+ *************************************************************************************************/
+
+// TOP
 
 #include "memhold.h" // Declares module functions
 
@@ -45,7 +66,8 @@ static const int MAX_MAIN_LOOP_COUNT = 4;
 
 // memhold.c:174:30: error: format specifies type 'char *' but the argument has
 // type '__pid_t' (aka 'int') [-Werror,-Wformat]
-typedef __pid_t MH_PID_TYPE;
+// typedef __pid_t MH_PID_TYPE;
+typedef pid_t MH_PID_TYPE;
 
 typedef struct Memhold
 {
@@ -103,8 +125,64 @@ MHAPI Memhold InitMemhold(void)
 
 //<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
 MHAPI double GetCpuUsage(MH_PID_TYPE pid);
+
+MHAPI double GetCpuUsage(MH_PID_TYPE pid)
+{
+    fprintf(stderr, "[  ERR  ]  unimplemented\n");
+    exit(1);
+};
+
 //<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
 MHAPI long GetMemUsage(MH_PID_TYPE pid);
+
+MHAPI long GetMemUsage(MH_PID_TYPE pid)
+{
+    long status = -1;
+
+    char path[256];
+    snprintf(path, sizeof(path), "/proc/%d/status", pid);
+
+    FILE *file = fopen(path, "r");
+
+    if (!file)
+    {
+        perror("[ ERR! ]  failed to open status file");
+        status = -1;
+        goto cleanupError;
+    }
+
+    char line[356];
+    long memoryUsage = -1;
+
+    while (fgets(line, sizeof(line), file))
+    {
+        if (strncmp(line, "VmRSS:", 6) == 0)
+        {
+            sscanf(line + 6, "%ld", &memoryUsage);
+            break;
+        }
+    }
+    status = 0; // Success
+
+    // Cleanup
+    status = fclose(file);
+
+    if (status != 0)
+    {
+        perror("[ ERR! ]  failed to close status file");
+        goto ioError;
+    }
+
+    return memoryUsage;
+
+cleanupError:
+    status = fclose(file);
+
+    if (status != 0) perror("[ ERR! ]  failed to close status file");
+
+ioError:
+    return status;
+};
 
 //-----------------------------------------------------------------------------
 // IT'S SHOWTIME                                                       ^_^
@@ -187,6 +265,8 @@ int RunMain()
         }
 
         { // Get Memory Usage.
+            memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
+
             if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zu\n", memUsageThisFrame);
         }
 

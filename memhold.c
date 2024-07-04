@@ -1,38 +1,32 @@
-// file: main.c
-
 // TOP
+
+// file: main.c
 
 #include "memhold.h" // Declares module functions
 
-#include <assert.h> // Required for: assert(),
-// #include <signal.h>
-// #include <stdarg.h>
-// #include <stddef.h>
-#include <stdio.h>  // Required for: printf(), fprintf(), sprintf(), stderr, stdout,
-#include <stdlib.h> // Required for: atoi(), exit(),
-#include <string.h> // Required for: strcmp(),
+#include <assert.h> // Required for: assert()
+#include <stdio.h>  // Required for: printf(), fprintf(), sprintf(), stderr, stdout
+#include <stdlib.h> // Required for: atoi(), exit()
+#include <string.h> // Required for: strcmp(), NULL
 #include <sys/wait.h>
 #include <unistd.h> // Required for: fork(), getpid(), sleep(),... [UNIX only lib]
 
-/* unistd.h
- * [Unix only] fork, wait, waitpid - basic process management
- * SYNOPSIS @load "fork" pid = fork() ret = waitpid(pid) ret = wait(); */
-
+//-----------------------------------------------------------------------------
+// Debug Flags (set in build step)
+//-----------------------------------------------------------------------------
+// Debugging: ~ + MEMHOLD_SLOW = 0 --> fast code + MEMHOLD_SLOW = 1 --> slow code: See in "./Makefile": ~ + DFLAGS = -DMEMHOLD_SLOW=0
 #if defined(MEMHOLD_SLOW)
-    // Debugging: ~
-    //   + MEMHOLD_SLOW = 0 --> fast code
-    //   + MEMHOLD_SLOW = 1 --> slow code
-    // See in "./Makefile": ~
-    //   + DFLAGS = -DMEMHOLD_SLOW=0
     #define MEMHOLD_SLOW = 0
 #endif
 
+// For when we want to enjoy dabbling with xy problems, code golfing, busy work, and procrastination.
 #if defined(MEMHOLD_YAGNI)
-    // For when we want to enjoy dabbling with xy problems,
-    // code golfing, busy work, and procrastination.
     #define MEMHOLD_YAGNI = 0
 #endif
 
+//-----------------------------------------------------------------------------
+// Macros and Defines
+//-----------------------------------------------------------------------------
 // clang-format off
 #define COLOR_INFO    CLITERAL(Color) { 102, 191, 255, 255 }   // Sky Blue
 #define COLOR_WARN    CLITERAL(Color) { 255, 161, 0, 255 }     // Orange
@@ -40,9 +34,17 @@
 #define COLOR_SUCCESS CLITERAL(Color) { 0, 228, 48, 255 }      // Green
 // clang-format on
 
+//-----------------------------------------------------------------------------
+// Some constants
+//-----------------------------------------------------------------------------
+static const int MAX_MAIN_LOOP_COUNT = 4;
+
+//-----------------------------------------------------------------------------
+// DATA STRUCTURESSSSS
+//-----------------------------------------------------------------------------
+
 // memhold.c:174:30: error: format specifies type 'char *' but the argument has
 // type '__pid_t' (aka 'int') [-Werror,-Wformat]
-//
 typedef __pid_t MH_PID_TYPE;
 
 typedef struct Memhold
@@ -62,6 +64,18 @@ typedef struct Memhold
     __pid_t memholdMainProcessPID;
 
 } Memhold;
+
+//-----------------------------------------------------------------------------
+// Global variables
+//-----------------------------------------------------------------------------
+
+Memhold     memhold = {0};
+MH_PID_TYPE procPID;
+bool        tmpArgVerbose = true; // NOTE(Lloyd): Set this later to `memhold.flagVerbose`
+
+//-----------------------------------------------------------------------------
+// FUNCTIONSSSS
+//-----------------------------------------------------------------------------
 
 MHAPI Memhold InitMemhold(void);
 MHAPI Memhold InitMemhold(void)
@@ -87,45 +101,18 @@ MHAPI Memhold InitMemhold(void)
     return result;
 }
 
+//<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
 MHAPI double GetCpuUsage(MH_PID_TYPE pid);
-MHAPI long   GetMemUsage(MH_PID_TYPE pid);
+//<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
+MHAPI long GetMemUsage(MH_PID_TYPE pid);
 
-int main(int argc, char *argv[])
+//-----------------------------------------------------------------------------
+// IT'S SHOWTIME                                                       ^_^
+//-----------------------------------------------------------------------------
+
+int RunMain()
 {
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
-        exit(1);
-    }
-
-    // Declare main function variables
-    //-------------------------------------------------------------------------
-    Memhold     memhold = {};
-    MH_PID_TYPE procPID;
-    // NOTE(Lloyd): Set this later to `memhold.flagVerbose`
-    bool tmpArgVerbose = true;
-    //------------------------------------------------------------------------
-
-    // Write stdout program name and version
-    memhold.apiVersion = MEMHOLD_VERSION;
-    fprintf(stdout, "memhold %s\n", memhold.apiVersion);
-
-    if (tmpArgVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
-
-    // Parse args and ensure a valid process PID is passed.
-    //-------------------------------------------------------------------------
-    {                                       // $ pgrep waybar | xargs -I _ ./memhold _
-        char *pid = argv[1];                // argv[1] is stdout of `$ pgrep lua`
-        procPID   = (MH_PID_TYPE)atoi(pid); // This will panic either way.
-
-        if (!(procPID >= 0)) // If not a number|integer...
-        {
-            fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
-            fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", procPID);
-            exit(1);
-        }
-    }
-    //-------------------------------------------------------------------------
+    int success = 0; // EXIT_SUCCESS
 
     // Initialize module
     //-------------------------------------------------------------------------
@@ -161,21 +148,8 @@ int main(int argc, char *argv[])
     }
     //-------------------------------------------------------------------------
 
-#if MEMHOLD_YAGNI
-    __pid_t id = fork(); // Fork fun!!
-
-    if (id == 0) printf("child process id = %d\n", id);
-    else printf("not child process id = %d\n", id);
-#endif /* if MEMHOLD_YAGNI */
-
-    // Start main loop
+    // Prepare main loop
     //-------------------------------------------------------------------------
-    int loopCounter = 0, maxLoopCount = 4;
-
-#if MEMHOLD_SLOW
-    int sleepResultThisFrame = -1;
-#endif
-
     if (memhold.flagVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 2: Monitor processes >>>\n\n");
 
     size_t cpuUsage[64];
@@ -190,89 +164,85 @@ int main(int argc, char *argv[])
     // Prepare command statements
     snprintf(cmdCPU, sizeof(cmdCPU), "ps -p %d -o %%cpu --no-headers", memhold.userProcessPID);
     snprintf(cmdMEM, sizeof(cmdMEM), "ps -p %d -o rss --no-headers", memhold.userProcessPID);
+    //-------------------------------------------------------------------------
 
-#if MEMHOLD_YAGNI
-    if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  %s[cpu]: Preparing command: $ %s\n", memhold.apiID, cmdCPU);
-    if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  %s[mem]: Preparing command: $ %s\n", memhold.apiID, cmdMEM);
-#endif /* if MEMHOLD_YAGNI */
-
-    //
-    //
-    //
-    //
-    //
     // Run main loop
+    //-------------------------------------------------------------------------
+    int loopCounter = 0;
+
     while (1)
     {
-        { // Get CPU Usage.
-#if MEMHOLD_YAGNI
-            cpuUsageThisFrame         = 1.0f + loopCounter; // TEMPORARY PSEUDOCODE!!!!
-            cpuUsage[cpuUsageCounter] = cpuUsageThisFrame;
-            cpuUsageCounter += 1;
-            cpuUsageCounter %= 64; // Avoid overflowing buffer!
-#endif                             /* if MEMHOLD_YAGNI */
-
-            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  cpu: %zu\n", cpuUsageThisFrame);
-        }
-
-        { // Get Memory Usage.
-#if MEMHOLD_YAGNI
-            memUsageThisFrame         = 1.0f + loopCounter; // TEMPORARY PSEUDOCODE!!!!
-            memUsage[memUsageCounter] = memUsageThisFrame;
-            memUsageCounter += 1;
-            memUsageCounter %= 64; // Avoid overflowing buffer!
-#endif                             /* if MEMHOLD_YAGNI */
-            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zu\n", memUsageThisFrame);
-#if 0
-            FILE *fp = popen(command, "r");
-            if (!fp) { perror("popen"); exit(1); }
-#endif /* if 0 */
-        }
-
-        { // Sleep/Pause this frame.
-#if MEMHOLD_SLOW
-            sleepResultThisFrame = sleep(memhold.refreshSeconds);
-
-            assert(sleepResultThisFrame == 0 && "failed to assert 0 code from sleep signal result");
-#else
-            sleep(memhold.refreshSeconds); // Default: 2s per frame
-#endif /* if MEMHOLD_SLOW */
-        }
-
-#if 1 || MEMHOLD_SLOW
-        // TODO(Lloyd): Remove the overide `1` after prototyping - 20240703114505UTC
-        loopCounter += 1;
-
-        if (loopCounter >= maxLoopCount)
+#if 1 /* <<<<<<<<<<< Remove this after prototyping >>>>>>>>>> */
+        if (loopCounter >= MAX_MAIN_LOOP_COUNT)
         {
             fprintf(stdout, "[ WARN ]  *break* main loop on iteration: %d\n", loopCounter);
             break;
         };
-#endif /* if 1 || MEMHOLD_SLOW */
 
-    } // end while (1)
-      //
-      //
-      //
-      //
-      //
+        loopCounter += 1;
+#endif
+
+        { // Get CPU Usage.
+            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  cpu: %zu\n", cpuUsageThisFrame);
+        }
+
+        { // Get Memory Usage.
+            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zu\n", memUsageThisFrame);
+        }
+
+        // Pause this frame (2s per frame by default.)
+        sleep(memhold.refreshSeconds);
+    }
+    // end while (1)
     //-------------------------------------------------------------------------
 
     // Unload program
     //-------------------------------------------------------------------------
+    // NOTE(Lloyd): Unload more data or free memory here... (e.g. ML_FREE(...))
+    // ...
+
     if (memhold.flagVerbose)
     {
         fprintf(stdout, "\n[ INFO ]  <<< Stage 3: Cleanup and Exit >>>\n\n");
         fprintf(stdout, "[ INFO ]  took %.2fs\n", loopCounter * memhold.refreshSeconds);
     }
-
-    // TODO(Lloyd): Unload more data or free memory here...
-    // (e.g. ML_FREE(...))
-    // ...
-    // ...
     //-------------------------------------------------------------------------
 
-    return 0; // EXIT_SUCCESS
+    return success;
+};
+
+// Main entry point of the program.
+int main(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
+        exit(1);
+    }
+
+    { // Write stdout program name and version
+        memhold.apiVersion = MEMHOLD_VERSION;
+        fprintf(stdout, "memhold %s\n", memhold.apiVersion);
+    }
+
+    // Parse args and ensure a valid process PID is passed.
+    //-------------------------------------------------------------------------
+    if (tmpArgVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
+
+    char *pid = argv[1];                // argv[1] is stdout of `$ pgrep lua`
+    procPID   = (MH_PID_TYPE)atoi(pid); // This will panic either way.
+                                        //
+    if (!(procPID >= 0))                // If is invalid (not a number or integer.)
+    {
+        fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
+        fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", procPID);
+        exit(1);
+    }
+    //-------------------------------------------------------------------------
+
+    // Begin memhold hot loop.
+    int success = RunMain(); // 0 is success.
+    return success;          // EXIT_SUCCESS
 }
 
 // BOT

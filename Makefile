@@ -2,11 +2,11 @@
 
 # TOP
 
+.PHONY: all clean summary test
+
 # debug: NOTE(Lloyd): Use -g or -ggdb3 flag in CFLAGS. Omit -s flag.
 #	$ gf2 ./memhold $(pgrep emacs)
 # 	$ gdb ./memhold $(pgrep emacs)
-
-.PHONY: all clean test
 
 CC = clang
 CFLAGS = -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare \
@@ -58,6 +58,11 @@ format:
 # $ make run PROCN=tmux
 run:
 	@pgrep $(PROCN) | xargs -I _ ./$(EXE) _
+
+summary:
+	@dust --ignore-directory .git
+	@tokei
+	@git log --oneline
 
 test:
 	@echo 'unimplemented' # clang test.c

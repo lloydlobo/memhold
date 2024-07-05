@@ -245,7 +245,13 @@ int RunMain()
         bytesSoFar += snprintf(cmdGetProcName, sizeof(cmdGetProcName), "ps aux | grep %d", memhold.userProcessPID);
         assert(bytesSoFar >= 64 && bytesSoFar <= stackAllocCmd); //> 79 >= 64
 
-        { // TEMP LOG to stdout Process Name
+        //
+        // TEMP LOG to stdout Process Name
+        //
+
+#if 0
+
+        {
             int ret = system(cmdGetProcName);
 
             if (ret != 0)
@@ -256,22 +262,57 @@ int RunMain()
                 exit(1);
             };
         }
+
+#else
+
         {
-            FILE *fp;
-            char  cmd[1035];
+            const int CMD_MAX = 1035;
+            int       pstatus;
+            FILE     *pipefp;
+            char      cmd[CMD_MAX];
 
-            fp = popen(cmdGetProcName, "r");
+            pipefp = popen(cmdGetProcName, "r");
 
-            if (fp == NULL)
+            if (pipefp == NULL)
             {
                 perror("[ ERR! ]  failed to execute popen for getting process name via its PID");
                 exit(1);
             }
 
-            pclose(fp);
-        }
-    }
+            int cntr = 0;
 
+            /* 
+            clang-format off
+                [  OK  ] [0]: lloyd       2007  0.0  2.4 808912 96252 ?        Ssl  Jul04   0:06 /nix/store/r813aa9qb8rh3jhq6089hfcgqqj3zps9-rsibreak-0.12.13/bin/rsibreak
+                [  OK  ] [1]: lloyd     113341  0.0  0.0   3416  1856 pts/0    S    08:57   0:00 ./memhold 2007
+                [  OK  ] [2]: lloyd     113342  0.0  0.0 223700  3480 pts/0    S    08:57   0:00 sh -c -- ps aux | grep 2007
+                [  OK  ] [3]: lloyd     113344  0.0  0.0 222724  2572 pts/0    S    08:57   0:00 grep 2007
+                pstatus = 0
+            clang-format on
+            */
+            while (fgets(cmd, CMD_MAX, pipefp) != NULL)
+            {
+                printf("[  OK  ] [%d]: %s", cntr, cmd);
+
+                cntr++;
+            }
+
+            pstatus = pclose(pipefp);
+
+            if (pstatus == -1)
+            {
+                // todo
+                printf("pstatus = %d\n", pstatus);
+            }
+            else
+            {
+                // use macros
+                printf("pstatus = %d\n", pstatus);
+            }
+        }
+
+#endif /* if 0 */
+    }
     //-------------------------------------------------------------------------
 
     // Run main loop

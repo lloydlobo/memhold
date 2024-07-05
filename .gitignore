@@ -3,8 +3,11 @@
 memhold
 memhold.o
 
+docs/memhold.org
+
 *.un~
 *.org~
 tags.bak
-
 cachegrind.*
+
+

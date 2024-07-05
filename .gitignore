@@ -7,3 +7,4 @@ memhold.o
 *.org~
 tags.bak
 
+cachegrind.*

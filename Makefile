@@ -14,14 +14,14 @@ CFLAGS = -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare \
 	 -Wno-unused-but-set-variable -Wshadow 
 CFLAGS += -Werror
 CFLAGS += -DNDEBUG -ffast-math -march=native
-CFLAGS += -std=c99 -O3
+CFLAGS += -std=c99 -O3  -pthread
 # CFLAGS += -std=c99 -ferror-limit=1 -gdwarf-4 -ggdb3 -O0
 # CFLAGS += -s
 
 # =0 or =1
 DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
 
-LDLIBS = -lm -lpthread
+LDLIBS = -lm
 
 EXE = memhold
 PROCN = waybar 

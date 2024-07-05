@@ -26,7 +26,8 @@
 #include "memhold.h" // Declares module functions
 
 #include <assert.h> // Required for: assert()
-#include <stdio.h>  // Required for: printf(), fprintf(), sprintf(), stderr, stdout
+#include <signal.h>
+#include <stdio.h>  // Required for: printf(), fprintf(), sprintf(), stderr, stdout, popen() [with compiler option `-pthread`]
 #include <stdlib.h> // Required for: atoi(), exit()
 #include <string.h> // Required for: strcmp(), NULL
 #include <sys/wait.h>
@@ -58,15 +59,12 @@
 //-----------------------------------------------------------------------------
 // Some constants
 //-----------------------------------------------------------------------------
-static const int MAX_MAIN_LOOP_COUNT = 4;
+static const int MAX_HOT_LOOP_COUNT = 1 << 6; // 2s refresh cycle per loop
 
 //-----------------------------------------------------------------------------
 // DATA STRUCTURESSSSS
 //-----------------------------------------------------------------------------
 
-// memhold.c:174:30: error: format specifies type 'char *' but the argument has
-// type '__pid_t' (aka 'int') [-Werror,-Wformat]
-// typedef __pid_t MH_PID_TYPE;
 typedef pid_t MH_PID_TYPE;
 
 typedef struct Memhold
@@ -100,6 +98,7 @@ bool        tmpArgVerbose = true; // NOTE(Lloyd): Set this later to `memhold.fla
 //-----------------------------------------------------------------------------
 
 MHAPI Memhold InitMemhold(void);
+
 MHAPI Memhold InitMemhold(void)
 {
     Memhold result = {};
@@ -132,7 +131,6 @@ MHAPI double GetCpuUsage(MH_PID_TYPE pid)
     exit(1);
 };
 
-//<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
 MHAPI long GetMemUsage(MH_PID_TYPE pid);
 
 MHAPI long GetMemUsage(MH_PID_TYPE pid)
@@ -202,27 +200,23 @@ int RunMain()
     // Log module information to stdout
     //-------------------------------------------------------------------------
     if (memhold.flagVerbose) fprintf(stdout, "[  OK  ]  <PID> %d\n", memhold.userProcessPID);
+
     if (memhold.flagLog)
     {
-        { // Log user stats
-            fprintf(stdout, "[ INFO ]  [ user ]\n");
-            fprintf(stdout, "[ INFO ]  PID: %d\n", memhold.userProcessPID);
+        // Log user stats
+        fprintf(stdout, "[ INFO ]  [ user ]\n");
+        fprintf(stdout, "[ INFO ]  PID: %d\n", memhold.userProcessPID);
+        // Opts: constants like
+        fprintf(stdout, "[ INFO ]  Threshold CPU: %f\n", memhold.cpuThreshold);
+        fprintf(stdout, "[ INFO ]  Threshold MEM: %zu\n", memhold.memThreshold);
+        // Opts: loop stats
+        fprintf(stdout, "[ INFO ]  Refresh: %.2fs (%s)\n", memhold.refreshSeconds, memhold.apiID);
 
-            // Opts: constants like
-            fprintf(stdout, "[ INFO ]  Threshold CPU: %f\n", memhold.cpuThreshold);
-            fprintf(stdout, "[ INFO ]  Threshold MEM: %zu\n", memhold.memThreshold);
-
-            // Opts: loop stats
-            fprintf(stdout, "[ INFO ]  Refresh: %.2fs (%s)\n", memhold.refreshSeconds, memhold.apiID);
-        }
-
-        { // Log memhold stats
-            fprintf(stdout, "[ INFO ]  [ %s ]\n", memhold.apiID);
-            fprintf(stdout, "[ INFO ]  PID: %d\n", memhold.memholdMainProcessPID);
-
-            // Memhold: stats
-            fprintf(stdout, "[ INFO ]  Version: %d.%d.%d\n", MEMHOLD_VERSION_MAJOR, MEMHOLD_VERSION_MINOR, MEMHOLD_VERSION_PATCH);
-        }
+        // Log memhold stats
+        fprintf(stdout, "[ INFO ]  [ %s ]\n", memhold.apiID);
+        fprintf(stdout, "[ INFO ]  PID: %d\n", memhold.memholdMainProcessPID);
+        // Memhold: stats
+        fprintf(stdout, "[ INFO ]  Version: %d.%d.%d\n", MEMHOLD_VERSION_MAJOR, MEMHOLD_VERSION_MINOR, MEMHOLD_VERSION_PATCH);
     }
     //-------------------------------------------------------------------------
 
@@ -230,18 +224,54 @@ int RunMain()
     //-------------------------------------------------------------------------
     if (memhold.flagVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 2: Monitor processes >>>\n\n");
 
+    char cmdGetProcName[256];
+
+    char   cmdCPU[256];
+    char   cmdMEM[256];
     size_t cpuUsage[64];
     size_t memUsage[64];
+
     int    cpuUsageCounter   = 0;
     int    memUsageCounter   = 0;
     size_t cpuUsageThisFrame = 0;
     size_t memUsageThisFrame = 0;
-    char   cmdCPU[256];
-    char   cmdMEM[256];
 
     // Prepare command statements
-    snprintf(cmdCPU, sizeof(cmdCPU), "ps -p %d -o %%cpu --no-headers", memhold.userProcessPID);
-    snprintf(cmdMEM, sizeof(cmdMEM), "ps -p %d -o rss --no-headers", memhold.userProcessPID);
+    {
+        int stackAllocCmd = (sizeof(cmdCPU) + sizeof(cmdMEM) + sizeof(cmdGetProcName)); //> 768
+        int bytesSoFar    = 0;
+        bytesSoFar += snprintf(cmdCPU, sizeof(cmdCPU), "ps -p %d -o %%cpu --no-headers", memhold.userProcessPID);
+        bytesSoFar += snprintf(cmdMEM, sizeof(cmdMEM), "ps -p %d -o rss --no-headers", memhold.userProcessPID);
+        bytesSoFar += snprintf(cmdGetProcName, sizeof(cmdGetProcName), "ps aux | grep %d", memhold.userProcessPID);
+        assert(bytesSoFar >= 64 && bytesSoFar <= stackAllocCmd); //> 79 >= 64
+
+        { // TEMP LOG to stdout Process Name
+            int ret = system(cmdGetProcName);
+
+            if (ret != 0)
+            {
+                char msg[256]; // *note:* 'system' declared in stdlib.h
+                snprintf(msg, sizeof(msg), "[ ERR! ]  failed to execute command. system call returned: %d", ret);
+                perror(msg);
+                exit(1);
+            };
+        }
+        {
+            FILE *fp;
+            char  cmd[1035];
+
+            fp = popen(cmdGetProcName, "r");
+
+            if (fp == NULL)
+            {
+                perror("[ ERR! ]  failed to execute popen for getting process name via its PID");
+                exit(1);
+            }
+
+            pclose(fp);
+        }
+    }
+
     //-------------------------------------------------------------------------
 
     // Run main loop
@@ -251,7 +281,7 @@ int RunMain()
     while (1)
     {
 #if 1 /* <<<<<<<<<<< Remove this after prototyping >>>>>>>>>> */
-        if (loopCounter >= MAX_MAIN_LOOP_COUNT)
+        if (loopCounter >= MAX_HOT_LOOP_COUNT)
         {
             fprintf(stdout, "[ WARN ]  *break* main loop on iteration: %d\n", loopCounter);
             break;
@@ -267,7 +297,7 @@ int RunMain()
         { // Get Memory Usage.
             memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
 
-            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zu\n", memUsageThisFrame);
+            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zuK\n", memUsageThisFrame);
         }
 
         // Pause this frame (2s per frame by default.)

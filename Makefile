@@ -8,27 +8,35 @@
 #	$ gf2 ./memhold $(pgrep emacs)
 # 	$ gdb ./memhold $(pgrep emacs)
 
-CC = clang
-CFLAGS = -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare \
-	 -Wno-unused-parameter -Wno-unused-variable \
-	 -Wno-unused-but-set-variable -Wshadow 
-CFLAGS += -Werror
-CFLAGS += -DNDEBUG -ffast-math -march=native
-CFLAGS += -std=c99 -O3  -pthread
-# CFLAGS += -std=c99 -ferror-limit=1 -gdwarf-4 -ggdb3 -O0
-# CFLAGS += -s
 
-# =0 or =1
-DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
 
-LDLIBS = -lm
+BINARY = memhold
 
-EXE = memhold
-PROCN = waybar 
 # Process name to memhold
+#
+PROCN = waybar 
 
 SRCS = memhold.c
 OBJS = $(SRCS:.c=.o)
+
+
+
+CC = clang
+CFLAGS += -std=c99 -pthread
+CFLAGS = -Wall -Wextra -Wno-gnu-folding-constant -Wno-sign-compare \
+	 -Wno-unused-parameter -Wno-unused-variable \
+	 -Wno-unused-but-set-variable -Wshadow
+CFLAGS += -Werror
+CFLAGS += -DNDEBUG -ffast-math -march=native
+# CFLAGS += -Os ###> @public (-s strip symbols)
+# CFLAGS += -O3 ###> @public?
+CFLAGS += -ferror-limit=1 -gdwarf-4 -ggdb3 -O0 ###> @internal @debug
+
+LDLIBS = -lm
+
+# 0 (@public) or 1 (@internal)
+DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
+
 
 
 
@@ -37,14 +45,17 @@ OBJS = $(SRCS:.c=.o)
 #
 # See: ~
 #   + cs50 Makefile guide
-$(EXE): $(OBJS)
+$(BINARY): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDLIBS) $(DFLAGS)
 
+
+
+
 bench:
-	hyperfine -M 1 --warmup 2 -N --show-output 'make -iB $(EXE)' | tee -a make_bench_exe.log
+	hyperfine -M 1 --warmup 2 -N --show-output 'make -iB $(BINARY)' | tee -a make_bench_exe.log
 
 build_run:
-	make -B $(EXE) && make run
+	make -B $(BINARY) && make run
 
 clean:
 	@echo 'unimplemented' # trash ./build
@@ -55,9 +66,11 @@ ctags:
 format:
 	clang-format -i --verbose *.{c,h}
 
-# $ make run PROCN=tmux
+# Usage: ~
+#   + make run PROCN=tmux
+#
 run:
-	@pgrep $(PROCN) | xargs -I _ ./$(EXE) _
+	@pgrep $(PROCN) | xargs -I _ ./$(BINARY) _
 
 summary:
 	@dust --ignore-directory .git
@@ -67,7 +80,10 @@ summary:
 test:
 	@echo 'unimplemented' # clang test.c
 
-# $ make watch_build_run PROCN=btop
+# Usage: ~
+#   + make watch_build_run PROCN=btop
+#   + make -B watch_build_run PROCN=rsibreak THRESHMEM=100M
+#
 watch_build_run:
 	./scripts/watch_build_run.sh
 

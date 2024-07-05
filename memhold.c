@@ -31,6 +31,7 @@
 #include <stdlib.h> // Required for: atoi(), exit()
 #include <string.h> // Required for: strcmp(), NULL
 #include <sys/wait.h>
+#include <time.h>   // Required for: clock(), [time() ~ not used]
 #include <unistd.h> // Required for: fork(), getpid(), sleep(),... [UNIX only lib]
 
 //-----------------------------------------------------------------------------
@@ -59,7 +60,15 @@
 //-----------------------------------------------------------------------------
 // Some constants
 //-----------------------------------------------------------------------------
-static const int MAX_HOT_LOOP_COUNT = 1 << 6; // 2s refresh cycle per loop
+
+/**
+ * variable `MAX_HOT_LOOP_COUNT`
+ *
+ * Type: `const int`
+ * Value = `256 (0x100)`
+ * 2s refresh cycle per loop
+ */
+static const int MAX_HOT_LOOP_COUNT = (1 << 8);
 
 //-----------------------------------------------------------------------------
 // DATA STRUCTURESSSSS
@@ -141,6 +150,7 @@ MHAPI long GetMemUsage(MH_PID_TYPE pid)
     snprintf(path, sizeof(path), "/proc/%d/status", pid);
 
     FILE *file = fopen(path, "r");
+    printf("file.status = %d\n", file.status);
 
     if (!file)
     {
@@ -283,17 +293,16 @@ int RunMain()
 
             /* 
             clang-format off
-                [  OK  ] [0]: lloyd       2007  0.0  2.4 808912 96252 ?        Ssl  Jul04   0:06 /nix/store/r813aa9qb8rh3jhq6089hfcgqqj3zps9-rsibreak-0.12.13/bin/rsibreak
-                [  OK  ] [1]: lloyd     113341  0.0  0.0   3416  1856 pts/0    S    08:57   0:00 ./memhold 2007
-                [  OK  ] [2]: lloyd     113342  0.0  0.0 223700  3480 pts/0    S    08:57   0:00 sh -c -- ps aux | grep 2007
-                [  OK  ] [3]: lloyd     113344  0.0  0.0 222724  2572 pts/0    S    08:57   0:00 grep 2007
+                [  OK  ] [0]: user       2007  0.0  2.4 808912 96252 ?        Ssl  Jul04   0:06 /nix/store/r813aa9qb8rh3jhq6089hfcgqqj3zps9-rsibreak-0.12.13/bin/rsibreak
+                [  OK  ] [1]: user     113341  0.0  0.0   3416  1856 pts/0    S    08:57   0:00 ./memhold 2007
+                [  OK  ] [2]: user     113342  0.0  0.0 223700  3480 pts/0    S    08:57   0:00 sh -c -- ps aux | grep 2007
+                [  OK  ] [3]: user     113344  0.0  0.0 222724  2572 pts/0    S    08:57   0:00 grep 2007
                 pstatus = 0
             clang-format on
             */
             while (fgets(cmd, CMD_MAX, pipefp) != NULL)
             {
-                printf("[  OK  ] [%d]: %s", cntr, cmd);
-
+                fprintf(stdout, "[  OK  ] [%d]: %s", cntr, cmd);
                 cntr++;
             }
 
@@ -302,12 +311,18 @@ int RunMain()
             if (pstatus == -1)
             {
                 // todo
-                printf("pstatus = %d\n", pstatus);
+                perror("[ ERR! ] pclose");
             }
             else
             {
-                // use macros
-                printf("pstatus = %d\n", pstatus);
+
+    #if MEMHOLD_SLOW
+
+                // TODO: use macros (From examples in popen() are marvelous articles?)
+
+                fprintf(stdout, "[ INFO ] pclose returned success for: %s\n", cmdGetProcName);
+
+    #endif /* if MEMHOLD_SLOW */
             }
         }
 
@@ -322,6 +337,7 @@ int RunMain()
     while (1)
     {
 #if 1 /* <<<<<<<<<<< Remove this after prototyping >>>>>>>>>> */
+
         if (loopCounter >= MAX_HOT_LOOP_COUNT)
         {
             fprintf(stdout, "[ WARN ]  *break* main loop on iteration: %d\n", loopCounter);
@@ -329,17 +345,20 @@ int RunMain()
         };
 
         loopCounter += 1;
+
 #endif
 
-        { // Get CPU Usage.
-            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  cpu: %zu\n", cpuUsageThisFrame);
-        }
-
-        { // Get Memory Usage.
+        // Log process usage.
+        //---------------------------------------------------------------------
+        {
             memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
 
-            if (memhold.flagVerbose) fprintf(stdout, "[ INFO ]  mem: %zuK\n", memUsageThisFrame);
+            if (memhold.flagVerbose)
+            { // Similar to procs, top, htop, btop
+                fprintf(stdout, "[ INFO ]  PID: %d  MEM: %zuK  \t%ld\n", memhold.userProcessPID, memUsageThisFrame, clock());
+            }
         }
+        //---------------------------------------------------------------------
 
         // Pause this frame (2s per frame by default.)
         sleep(memhold.refreshSeconds);

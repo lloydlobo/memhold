@@ -60,10 +60,12 @@
     // Memory threshold in kilobytes (for example, 10 MB)
     #define MH_MEMORY_THRESHOLD 10240
 
-    // in /proc/<pid>/stat line 1
-    #define MH_UTIME_FIELD_INDEX 14
-    // in /proc/<pid>/stat line 1
-    #define MH_STIME_FIELD_INDEX 15
+    // /proc/PID/state
+    //      Process status.
+    //      See https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html
+    #define PROCESS_STAT_UTIME_INDEX     14
+    #define PROCESS_STAT_STIME_INDEX     15
+    #define PROCESS_STAT_STARTTIME_INDEX 22
 
     ///
     /// NOTE(Lloyd): The following is ported from raylib.h

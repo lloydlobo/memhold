@@ -717,3 +717,21 @@ int main(int argc, char *argv[])
 
   #endif // !MEMHOLD_H
 #+end_src
+
+* See https://www.baeldung.com/linux/total-process-cpu-usage#1-the-procltpidgtstat-file
+
+#+begin_quote
+  2.1. The /proc/<pid>/stat File
+  Inside the /proc directory, each process has its own /proc/<pid> folder, identified by the process’s PID. Then, each process has the special file /proc/<pid>/stat that contains the process’s status.
+  
+  The /proc/<pid>/stat file contains the information to calculate the total CPU usage. It’s a plain text file holding several values separated by whitespaces.
+  
+  Let’s use cat to see the status of the current shell. We can use the $$ special variable that is replaced with the current shell PID:
+  
+  $ cat /proc/$$/stat
+  6608 (bash) S 2782 6608 6608 34818 25989 4194304 6423 130989 0 428 3 1 903 124 20 0 1 0 84265 9269248 1452 18446744073709551615 4345856 5123037 140728509762160 0 0 0 65536 3686404 1266761467 0 0 0 17 6 0 0 0 0 0 5362544 5410152 9601024 140728509767363 140728509767374 140728509767374 140728509771758 0
+  
+  We can see several values separated by whitespace, and each value has its meaning.
+  
+  For instance, the first value is the process ID, the second is the process’s name, and the third is the process’s state. We can see the full list of values and their meanings by running the man 5 proc command.
+#+end_quote

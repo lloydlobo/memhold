@@ -179,6 +179,15 @@ associated with a running process ID in far greater detail.
 Even though files appear to be of size 0, examining their contents reveals
 otherwise:
 # cat status
+...
+
+Details of this process can be obtained by looking at the associated files in
+the directory for this process, /proc/460. You might wonder how you can see
+details of a process that has a file size of 0. It makes more sense if you think
+of it as a window into the kernel. The file doesn't actually contain any data;
+it just acts as a pointer to where the actual process information resides.
+...
+
 */
 
 /*
@@ -226,8 +235,9 @@ v
 
 int RunMain(void);
 
-MHAPI double GetCpuUsage(pid_t pid);
-MHAPI long   GetMemUsage(pid_t pid);
+MHAPI long GetCpuUsage(pid_t pid);
+MHAPI long GetMemUsage(pid_t pid);
+MHAPI long GetSystemUptimeSec(pid_t pid);
 
 MHAPI void LogProcLimits(pid_t pid);
 MHAPI void NoOp(void); // Placeholder function that does nothing.
@@ -266,11 +276,13 @@ MHAPI void LogProcLimits(pid_t pid)
                                                            //
     fprintf(stdout, "[ INFO ]  PID: %d  %s\n", pid, path); //> path = /proc/2014/cpuset
 
-    FILE *file = fopen(path, "r"); //> stream or NULL
+    // The file doesn't actually contain any data; it just acts as a pointer to
+    // where the actual process information resides.
+    FILE *fp = fopen(path, "r"); //> stream or NULL
 
-    if (!file)
+    if (!fp)
     {
-        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", fp);
         status = -1;
         goto ioError;
     }
@@ -278,7 +290,7 @@ MHAPI void LogProcLimits(pid_t pid)
     char line[356];
     int  lineCount = 0;
 
-    while (fgets(line, sizeof(line), file))
+    while (fgets(line, sizeof(line), fp))
     {
         if (memhold.flagVerbose)
         {
@@ -287,7 +299,7 @@ MHAPI void LogProcLimits(pid_t pid)
         }
     }
 
-    status = fclose(file);
+    status = fclose(fp);
 
     if ((status != 0))
     {
@@ -303,36 +315,89 @@ ioError:
 }
 
 
-
-// For processes using popen use: ~ "ps -p %d -o %%cpu --no-headers"
-//
-// /proc/[pid]/stat:
-// This file contains more detailed CPU usage data. The relevant fields are:
-//
-// utime: User mode CPU time
-// stime: Kernel mode CPU time
-MHAPI double GetCpuUsage(pid_t pid)
+MHAPI long GetSystemUptimeSec(pid_t pid)
 {
     long status = -1;
-    char path[256];
-    snprintf(path, sizeof(path), "/proc/%d/stat", pid); // Choices: cpuset
 
+    long systemUptime = -1;
 
-    FILE *file = fopen(path, "r"); //> stream or NULL
+    /*
+    $ cat /proc/uptime
+    6644.50 23980.38
+    $ tr . ' ' </proc/uptime | awk '{print $1}'
+    6667
+    */
 
-    if (!file)
+    FILE *fp = fopen("/proc/uptime", "r");
+
+    if (!fp)
     {
-        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", fp);
         status = -1;
-        goto ioError;
+        goto ioError; // Bail out when file pointer fails to open
     }
-
-    long cpuUsage      = -1; // Result
-    long cpuUsageUtime = -1;
-    long cpuUsageStime = -1;
 
     char line[356];
     int  lineCount = 0;
+
+    // while (fgets(line, sizeof(line), fp))
+    // {
+    //     printf("line = %s\n", line);
+    // }
+
+
+    long tmpfieldNext = -1;
+
+    fscanf(fp, "%lu %lu", &systemUptime, &tmpfieldNext);
+    fclose(fp);
+
+
+
+    return systemUptime;
+
+ioError:
+
+    return status;
+}
+
+
+// /proc/[pid]/stat:
+// This file contains more detailed CPU usage data. The relevant fields are: ~
+//   - utime: User mode CPU time
+//   - stime: Kernel mode CPU time
+//
+// Note: ~
+//   - For processes using popen use: ~ "ps -p %d -o %%cpu --no-headers"
+MHAPI long GetCpuUsage(pid_t pid)
+{
+
+    long status = -1;
+    //
+    char path[256];
+    snprintf(path, sizeof(path), "/proc/%d/stat", pid); // "/proc/%d/stat" is
+
+    // The file doesn't actually contain any data; it just acts as a pointer to
+    // where the actual process information resides.
+    FILE *fp = fopen(path, "r"); //> stream or NULL
+
+    if (!fp)
+    {
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", fp);
+        status = -1;
+        goto ioError; // Bail out
+    }
+
+
+    const long CLOCK_TICKS = sysconf(_SC_CLK_TCK); // Repeated again. it's okay ^_^
+
+    long                   cpuUsage         = -1; // Result
+    unsigned long long int processUtime     = 0;
+    unsigned long long int processStime     = 0;
+    long long              processStarttime = 0;
+
+    char line[356];
+    int  lineCount = 0;
+
 
 #if 0
    // Skip the first 13 fields
@@ -344,44 +409,67 @@ MHAPI double GetCpuUsage(pid_t pid)
     fclose(file);
 #endif /* if 0 */
 
+
     // Split fields in output of /proc/<pid>/stat that are presented as a series
     // of numbers and values separated by spaces.
     //----------------------------------------------------------------------------------
     const int MAX_TOKENS_CONSUMED_COUNT = 30; // Prevent infinite loops in inner while loop
 
-    while (fgets(line, sizeof(line), file))
+    while (fgets(line, sizeof(line), fp))
     {
-        char *token                = strtok(line, " "); // Divide S into tokens separated by characters in DELIM.
-        int   tokenConsumedCounter = 1;
+        char *token = strtok(line, " "); // Divide S into tokens separated by characters in DELIM.
+
+#if MEMHOLD_YAGNI
+        char *token = strchr(line, ' ');
+#endif
+
+        int tokenConsumedCount = 1;
 
         while (token != NULL)
         {
-            if (tokenConsumedCounter >= MAX_TOKENS_CONSUMED_COUNT) break;
+            if (tokenConsumedCount >= MAX_TOKENS_CONSUMED_COUNT) break;
 
-            if (tokenConsumedCounter == MH_UTIME_FIELD_INDEX) cpuUsageUtime = strtol(token, NULL, 10);
-            if (tokenConsumedCounter == MH_STIME_FIELD_INDEX) cpuUsageStime = strtol(token, NULL, 10);
+            // Assign tokens
+            // See https://github.com/htop-dev/htop/blob/db73229bddc6efd26875213f7927b156feb5a937/linux/LinuxProcessTable.c#L276
 
-// DEBUG
-#if 0
-            printf("tokens[%d] = %s\n", tokenConsumedCounter, token);
-#endif /* if 0 */
+            /* (14) utime  -  %lu */
+            if (tokenConsumedCount == PROCESS_STAT_UTIME_INDEX) processUtime = strtoull(token, NULL, 10);
 
+            /* (15) stime  -  %lu */
+            if (tokenConsumedCount == PROCESS_STAT_STIME_INDEX) processStime = strtoull(token, NULL, 10);
+
+            /* (22) starttime  -  %llu */
+            if (tokenConsumedCount == PROCESS_STAT_STARTTIME_INDEX)
+            { // TODO(Lloyd): Adjust for boottime + adjustTime(lhost, ...)  / 100; See
+              // https://github.com/htop-dev/htop/blob/db73229bddc6efd26875213f7927b156feb5a937/linux/LinuxProcessTable.c#L381
+                if (processStarttime == 0) processStarttime = (strtoll(token, NULL, 10) / CLOCK_TICKS);
+            }
+
+            // Consume token
             token = strtok(NULL, " ");
-
-            tokenConsumedCounter += 1;
+            tokenConsumedCount += 1;
         }
     }
 
-    if ((cpuUsageUtime != -1) && (cpuUsageStime != -1)) cpuUsage = (cpuUsageUtime + cpuUsageStime);
+    if (processUtime && processStime)
+    {
+        // getconf
+
+        cpuUsage = (processUtime + processStime);
+    }
+
+    assert((cpuUsage != -1) && "expected valid cpu usage while reading /proc/<pid>/stat");
     //----------------------------------------------------------------------------------
 
-    status = fclose(file); // Cleanup
+    status = fclose(fp); // Cleanup
 
     if ((status != 0))
     {
         perror("[ !ERR ]  failed to close status file");
-        goto ioError;
+        goto ioError; // Bail out when close error
     }
+
+    fprintf(stdout, "[ INFO ]  PID: %d  starttime: %llu\n", pid, processStarttime);
 
     return cpuUsage;
 
@@ -391,22 +479,23 @@ ioError:
 };
 
 
+// For processes using popen use: ~ "ps -p %d -o rss --no-headers"
 MHAPI long GetMemUsage(pid_t pid)
 {
     long status = -1;
 
     char path[256];
-
-    // For processes using popen use: ~ "ps -p %d -o rss --no-headers"
     snprintf(path, sizeof(path), "/proc/%d/status", pid); // Choices: status, mem
 
-    FILE *file = fopen(path, "r"); //> stream or NULL
+    // The file doesn't actually contain any data; it just acts as a pointer to
+    // where the actual process information resides.
+    FILE *fp = fopen(path, "r"); //> stream or NULL
 
-    if (!file) // [ ERR! ]  failed to open status file. file: (nil)
-    {          // zsh: segmentation fault (core dumped)  ./memhold $(pgrep clang)
-        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+    if (!fp) // [ ERR! ]  failed to open status file. file: (nil)
+    {        // zsh: segmentation fault (core dumped)  ./memhold $(pgrep clang)
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", fp);
         status = -1;
-        goto ioError;
+        goto ioError; // Bail out
     }
 
 
@@ -423,7 +512,7 @@ MHAPI long GetMemUsage(pid_t pid)
       - Its data
       - Shared libraries that are currently loaded into RAM
     */
-    while (fgets(line, sizeof(line), file))
+    while (fgets(line, sizeof(line), fp))
     {
         if (strncmp(line, "VmRSS:", 6) == 0)
         {
@@ -433,7 +522,7 @@ MHAPI long GetMemUsage(pid_t pid)
         }
     }
 
-    status = fclose(file); // Cleanup
+    status = fclose(fp); // Cleanup
 
     if (status != 0)
     {
@@ -549,10 +638,11 @@ int RunMain(void)
     #endif           /* if MEMHOLD_SLOW */
 
 #endif /* if MEMHOLD_YAGNI */
-    //----------------------------------------------------------------------------------
+       //----------------------------------------------------------------------------------
 
     // Run main loop
     //----------------------------------------------------------------------------------
+    const long         CLOCK_TICKS = sysconf(_SC_CLK_TCK); // $ getconf CLK_TCK #> 100 # 100 clock ticks in a second.
     int                loopCounter = 0;
     double             cpuPercent  = 0;
     unsigned long long cpuTime1, cpuTime2;
@@ -561,6 +651,7 @@ int RunMain(void)
 
     while (1)
     {
+
 #if 1 /* <<<<<<<<<<< Remove this after prototyping >>>>>>>>>> */
 
         if (loopCounter >= MAX_HOT_LOOP_COUNT)
@@ -573,19 +664,7 @@ int RunMain(void)
 
 #endif
 
-        // Log process usage.
-        // Similar to procs. And somewhat like top, htop, btop (but not ncurses like)
-        //----------------------------------------------------------------------------------
-        //
-        // cpuUsage_         = GetCpuUsage(memhold.userProcessPID);
         memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
-
-        if (memhold.flagVerbose)
-        {
-            fprintf(stdout, "[ INFO ]  PID: %d  CPU: %3.6f%%  \t%ld\n", memhold.userProcessPID, cpuPercent, clock());
-            fprintf(stdout, "[ INFO ]  PID: %d  MEM: %8zuK  \t%ld\n", memhold.userProcessPID, memUsageThisFrame, clock());
-        }
-        //----------------------------------------------------------------------------------
 
         // Pause this frame (2s per frame by default.)
         //----------------------------------------------------------------------------------
@@ -594,26 +673,27 @@ int RunMain(void)
             sleep(cpuWaitASecond);
             cpuTime2 = GetCpuUsage(memhold.userProcessPID);
         }
+        long systemUptime = GetSystemUptimeSec(memhold.userProcessPID);
+        printf("systemUptime = %ld\n", systemUptime);
 
         // Calculate CPU usage
-        //
-        // We use sysconf(_SC_CLK_TCK) to get the number of clock ticks per
-        // second, which allows us to convert from clock ticks to seconds.
+        // We use sysconf(_SC_CLK_TCK) to get the number of clock ticks per second, which allows us to convert from clock ticks to seconds.
         // @sysconf: Get the value of the system variable NAME. _SC_CLK_TCK:
-        // Type: `int`  Value = `2`
-        //
-        cpuPercent = (1.0 * (cpuTime2 - cpuTime1)) / sysconf(_SC_CLK_TCK); // Multiply by 1.0 to avoid precision loss
-                                                                           // while dividing in next instruction
+        cpuPercent = (1.0 * (cpuTime2 - cpuTime1)) / CLOCK_TICKS; // Multiply by 1.0 to avoid precision loss while dividing in next instruction
 
-#if 0
-        // Disabled as the value is too small and seems to be double of CPU% in
-        // btop for the running user process.
+#if 0  // Disabled as the value is too small and seems to be double of CPU% in btop for the running user process.
         cpuPercent /= 100.0;
 #endif /* if 0 */
 
         // Ensure the loop waited for total `memhold.refreshSeconds` seconds
         if (cpuWaitASecond < memhold.refreshSeconds) { sleep(memhold.refreshSeconds - cpuWaitASecond); }
         //----------------------------------------------------------------------------------
+
+        if (memhold.flagVerbose)
+        {
+            fprintf(stdout, "[ INFO ]  PID: %d  CPU: %3.6f%%  \t%ld\n", memhold.userProcessPID, cpuPercent, clock());
+            fprintf(stdout, "[ INFO ]  PID: %d  MEM: %8zuK  \t%ld\n", memhold.userProcessPID, memUsageThisFrame, clock());
+        }
     }
     // end while (1)
     //----------------------------------------------------------------------------------
@@ -665,8 +745,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Convert argv[1] (<PID>: stdout of `$ pgrep lua`) to a long integer.
-    gProcPID = (pid_t)(strtol(argv[1], NULL, 10));
+    // Convert argv[1] (<PID>: stdout of `$ pgrep lua`) to pid_t i.e. alias of integer.
+    gProcPID = (pid_t)(atoi(argv[1]));
 
     // <<<<<<< HOW TO FIGURE OUT WHAT A VALID PID IS???? >>>>>>
     // If is invalid (not a number or integer.) then
@@ -675,8 +755,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
         fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", gProcPID);
         status = 1;
-
-        goto cleanupError;
+        goto cleanupError; // Bail out on invalid pid
     }
     //----------------------------------------------------------------------------------
 

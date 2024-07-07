@@ -79,6 +79,10 @@ AlignTrailingComments:
   Kind:            Always
   OverEmptyLines:  0
 
+# EmptyLineAfterAccessModifier: Never
+# EmptyLineBeforeAccessModifier: LogicalBlock
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 3 # Inspired by lua.h (beautiful header file)
 ...
 
 # BOT

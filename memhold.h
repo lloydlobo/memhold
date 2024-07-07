@@ -1,31 +1,57 @@
+/*
+**
+** memhold - Simple timeouts for processes that hog memory
+**
+**
+*/
+
+
 #ifndef MEMHOLD_H
     #define MEMHOLD_H
 
-    #include <stdarg.h> // Required for: va_list - Only used by TraceLogCallback
 
-//// NOTE(Lloyd): The following is ported from raylib.h
+    #include <stdarg.h> // Required for: va_list - Only used by TraceLogCallback
+    #include <stdio.h>  // Required for: fprintf() - Only used by macro UNIMPLEMENTED
+
 
     #define MEMHOLD_VERSION_MAJOR 0
     #define MEMHOLD_VERSION_MINOR 1
-    #define MEMHOLD_VERSION_PATCH 0
+    #define MEMHOLD_VERSION_PATCH 1
+    #define MEMHOLD_VERSION_NUM   011
     #define MEMHOLD_VERSION       "0.1"
+    #define MEMHOLD_RELEASE       "0.1.1"
+    #define MEMHOLD_ID            "memhold"
+    #define MEMHOLD_VERSIONFULL   "memhold 0.1"
+    #define MEMHOLD_RELEASEFULL   "memhold 0.1.1"
+    #define MEMHOLD_COPYRIGHT     "..."
 
+
+    ///
+    ////NOTE(Lloyd): The following is ported from raylib.h
+    ///
+    //
     // Function specifiers in case library is build/used as a shared library (Windows)
     // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
     #if defined(_WIN32)
         #if defined(BUILD_LIBTYPE_SHARED)
             #if defined(__TINYC__)
                 #define __declspec(x) __attribute__((x))
+
             #endif
+
             #define MHAPI __declspec(dllexport) // We are building the library as a Win32 shared library (.dll)
+
         #elif defined(USE_LIBTYPE_SHARED)
             #define MHAPI __declspec(dllimport) // We are using the library as a Win32 shared library (.dll)
+
         #endif
-    #endif
+
+    #endif // _WIN32
 
     #ifndef MHAPI
         #define MHAPI // Functions defined as 'extern' by default (implicit specifiers)
-    #endif
+
+    #endif // !MHAPI
 
 //----------------------------------------------------------------------------------
 // Some basic Defines
@@ -34,7 +60,14 @@
     // Memory threshold in kilobytes (for example, 10 MB)
     #define MH_MEMORY_THRESHOLD 10240
 
-    // NOTE(Lloyd): The following is ported from raylib.h
+    // in /proc/<pid>/stat line 1
+    #define MH_UTIME_FIELD_INDEX 14
+    // in /proc/<pid>/stat line 1
+    #define MH_STIME_FIELD_INDEX 15
+
+    ///
+    /// NOTE(Lloyd): The following is ported from raylib.h
+    ///
 
     // Allow custom memory allocators
     // NOTE: Require recompiling raylib sources
@@ -50,6 +83,7 @@
     #ifndef MH_FREE
         #define MH_FREE(ptr) free(ptr)
     #endif
+
 
     // NOTE: MSVC C++ compiler does not support compound literals (C99 feature)
     // Plain structures in C++ (without constructors) can be initialized with { }
@@ -67,6 +101,7 @@
         #error "C++11 or later is required. Add -std=c++11"
     #endif
 
+
 /*
     // NOTE: We set some defines with some data types declared by raylib
     // Other modules (raymath, rlgl) also require some of those types, so,
@@ -81,6 +116,23 @@
     #define RL_MATRIX_TYPE
 */
 
+
+//----------------------------------------------------------------------------------
+// Macro Magic
+//----------------------------------------------------------------------------------
+
+    // Classic macro like `len(collection)` in lang that start with 'p'
+    #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a[0])))
+
+    // Uses Tsoding's (aka @rexim) implementation for UNIMPLEMENTED macro
+    #define UNIMPLEMENTED                                                                                                                                      \
+        do                                                                                                                                                     \
+        {                                                                                                                                                      \
+            fprintf(stderr, "%s:%d: %s is not implemented yet\n", __FILE__, __LINE__, __func__);                                                               \
+            abort();                                                                                                                                           \
+        } while (0)
+
+
 //----------------------------------------------------------------------------------
 // Structures Definition
 //----------------------------------------------------------------------------------
@@ -88,13 +140,17 @@
 // Boolean type
     #if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
         #include <stdbool.h>
+
     #elif !defined(__cplusplus) && !defined(bool)
 typedef enum bool
 {
     false = 0,
     true  = !false
+
 } bool;
+
         #define RL_BOOL_TYPE
+
     #endif
 
 // Color, 4 components, R8G8B8A8 (32bit)
@@ -104,6 +160,7 @@ typedef struct Color
     unsigned char g; // Color green value
     unsigned char b; // Color blue value
     unsigned char a; // Color alpha value
+
 } Color;
 
 //----------------------------------------------------------------------------------
@@ -111,6 +168,7 @@ typedef struct Color
 //----------------------------------------------------------------------------------
 
 // System/Window config flags
+//
 // NOTE: Every bit registers one state (use it with bit masks)
 // By default all flags are set to 0
 typedef enum
@@ -131,6 +189,7 @@ typedef enum
     FLAG_BORDERLESS_WINDOWED_MODE = 0x00008000, // Set to run program in borderless windowed mode
     FLAG_MSAA_4X_HINT             = 0x00000020, // Set to try enabling MSAA 4X
     FLAG_INTERLACED_HINT          = 0x00010000  // Set to try enabling interlaced video format (for V3D)
+
 } ConfigFlags;
 
 // Trace log level
@@ -145,7 +204,9 @@ typedef enum
     LOG_ERROR,   // Error logging, used on unrecoverable failures
     LOG_FATAL,   // Fatal logging, used to abort program: exit(EXIT_FAILURE)
     LOG_NONE     // Disable logging
+
 } TraceLogLevel;
+
 
 // Callbacks to hook some internal functions
 // WARNING: These callbacks are intended for advance users
@@ -154,19 +215,23 @@ typedef unsigned char *(*LoadFileDataCallback)(const char *fileName, int *dataSi
 typedef bool (*SaveFileDataCallback)(const char *fileName, void *data, int dataSize); // FileIO: Save binary data
 typedef char *(*LoadFileTextCallback)(const char *fileName);                          // FileIO: Load text data
 typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);               // FileIO: Save text data
+                                                                                      //
 
 //------------------------------------------------------------------------------------
 // Global Variables Definition
 //------------------------------------------------------------------------------------
 // It's lonely here...
 
+
 //------------------------------------------------------------------------------------
 // Window and Graphics Device Functions (Module: core)
 //------------------------------------------------------------------------------------
 
     #if defined(__cplusplus)
+
 extern "C"
-{ // Prevents name mangling of functions
+{ /* `extern "C"` Prevents name mangling of functions */
+
     #endif
 
     // Window-related functions
@@ -226,13 +291,18 @@ extern "C"
     //------------------------------------------------------------------
 
     #if defined(__cplusplus)
-}
+
+} /* end of `extern C { ...` */
+
     #endif
 
 #endif // !MEMHOLD_H
 
+
+//
 // EPILOGUE
 //
+
 // Alterations, modifications, and ports: ~
 //   + RLAPI -> MHAPI
 //      + Functions and Data structures naming used as a good starter base
@@ -241,9 +311,12 @@ extern "C"
 //   + TraceLogLevel
 //   + ...Callback() (*function pointers*)
 
-// raylib
+
+
 //
-// LICENSE
+// raylib LICENSE
+//
+
 /*
 Copyright (c) 2013-2023 Ramon Santamaria (@raysan5)
 

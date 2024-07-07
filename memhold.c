@@ -5,60 +5,6 @@
  *  memhold 0.1
  *
  *
- *
- *           ✦ ❯ ./memhold $(pgrep clang)
- *           memhold 0.1
- *
- *           [ INFO ]  <<< Stage 1: Initialize program >>>
- *
- *           [  OK  ]  <PID> 77100
- *           [ INFO ]  [ user ]
- *           [ INFO ]  PID: 77100
- *           [ INFO ]  Threshold CPU: 50.000000
- *           [ INFO ]  Threshold MEM: 10240
- *           [ INFO ]  Refresh: 2.00s (memhold)
- *           [ INFO ]  [ memhold ]
- *           [ INFO ]  PID: 77183
- *           [ INFO ]  Version: 0.1.0
- *
- *           [ INFO ]  <<< Stage 2: Monitor processes >>>
- *
- *           [  OK  ] [0]: lloyd      77100  1.3  0.8 435860 34876 ?        Ssl  11:46   0:00 /home/lloyd/.local/share/nvim/mason/bin/clangd
- *           [  OK  ] [1]: lloyd      77183  0.0  0.0   3400  1932 pts/6    S+   11:46   0:00 ./memhold 77100
- *           [  OK  ] [2]: lloyd      77184  0.0  0.0 223700  3548 pts/6    S+   11:46   0:00 sh -c -- ps aux | grep 77100
- *           [  OK  ] [3]: lloyd      77186  0.0  0.0 222724  2696 pts/6    S+   11:46   0:00 grep 77100
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       1302
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       1532
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       1773
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       1985
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       2185
- *           *file = 0x5607e7b0c8d0
- *           [ INFO ]  PID: 77100  MEM: 34876K       2435
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2591
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2760
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2926
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3003
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3179
- *           *file = (nil)
- *           [ ERR! ]  failed to open status file. file: (nil)
- *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3351
- *
- *
  *  20240704144247UTC
  *      ==48754== Command: ./memhold 2007
  *      [ INFO ]  took 8.00s
@@ -75,9 +21,8 @@
  *
  *************************************************************************************************/
 
-// TOP
-
 #include "memhold.h" // Declares module functions
+
 
 #include <assert.h> // Required for: assert()
 #include <signal.h>
@@ -88,28 +33,35 @@
 #include <time.h>   // Required for: clock(), [time() ~ not used]
 #include <unistd.h> // Required for: fork(), getpid(), sleep(),... [UNIX only lib]
 
+
 //-----------------------------------------------------------------------------
 // Debug Flags (set in build step)
 //-----------------------------------------------------------------------------
+
 // Debugging: ~ + MEMHOLD_SLOW = 0 --> fast code + MEMHOLD_SLOW = 1 --> slow code: See in "./Makefile": ~ + DFLAGS = -DMEMHOLD_SLOW=0
 #if defined(MEMHOLD_SLOW)
     #define MEMHOLD_SLOW = 0
+
 #endif
 
 // For when we want to enjoy dabbling with xy problems, code golfing, busy work, and procrastination.
 #if defined(MEMHOLD_YAGNI)
     #define MEMHOLD_YAGNI = 0
+
 #endif
+
 
 //-----------------------------------------------------------------------------
 // Macros and Defines
 //-----------------------------------------------------------------------------
+
 // clang-format off
 #define COLOR_INFO    CLITERAL(Color) { 102, 191, 255, 255 }   // Sky Blue
 #define COLOR_WARN    CLITERAL(Color) { 255, 161, 0, 255 }     // Orange
 #define COLOR_ERROR   CLITERAL(Color) { 230, 41, 55, 255 }     // Red
 #define COLOR_SUCCESS CLITERAL(Color) { 0, 228, 48, 255 }      // Green
 // clang-format on
+
 
 //-----------------------------------------------------------------------------
 // Some constants
@@ -121,11 +73,10 @@ static const int MAX_HOT_LOOP_COUNT = (1 << 8); //> `256 (0x100)` (1 << 8)
 // Limit fopen for file at path: `char path[256]; snprintf(path, sizeof(path), "/proc/%d/status", pid);`
 static const int MAX_RETRIES_FILE_NOT_FOUND = (1 << 3); //> `8 (0x100)` (1 << 3)
 
+
 //-----------------------------------------------------------------------------
 // DATA STRUCTURESSSSS
 //-----------------------------------------------------------------------------
-
-typedef pid_t MH_PID_TYPE;
 
 typedef struct Memhold
 {
@@ -140,8 +91,8 @@ typedef struct Memhold
     float  cpuThreshold;
     size_t memThreshold;
 
-    __pid_t userProcessPID;
-    __pid_t memholdMainProcessPID;
+    pid_t userProcessPID;
+    pid_t memholdMainProcessPID;
 
 } Memhold;
 
@@ -152,7 +103,9 @@ typedef struct Memhold
 
 Memhold memhold = {0};
 
-bool       tmpArgVerbose    = false;
+bool  gVerbose; //@Temp
+pid_t gProcPID;
+
 static int cntrFopenRetries = 0;
 
 //-----------------------------------------------------------------------------
@@ -166,10 +119,10 @@ MHAPI Memhold InitMemhold(void)
     Memhold result = {};
 
     result = (Memhold){
-        .flagLog     = true, // TODO(Lloyd): Override via CLI args
-        .flagVerbose = true, // TODO(Lloyd): Override via CLI args
+        .flagLog     = true,     // TODO(Lloyd): Override via CLI args
+        .flagVerbose = gVerbose, // TODO(Lloyd): Override via CLI args
 
-        .apiID      = "memhold",
+        .apiID      = MEMHOLD_ID,
         .apiVersion = MEMHOLD_VERSION,
 
         .refreshSeconds = 2.0f,
@@ -177,7 +130,7 @@ MHAPI Memhold InitMemhold(void)
         .cpuThreshold = 50.0f,
         .memThreshold = MH_MEMORY_THRESHOLD, //>10240kb Max: 500000kb
 
-        .userProcessPID        = 0,
+        .userProcessPID        = gProcPID,
         .memholdMainProcessPID = 0,
     };
 
@@ -191,9 +144,7 @@ int Init(void)
     int status = -1; // SUCCESS
 
     cntrFopenRetries = 0;
-    tmpArgVerbose    = true; // NOTE(Lloyd): Set this later to `memhold.flagVerbose`
-
-    memhold = InitMemhold();
+    memhold          = InitMemhold();
     {
         memhold.memholdMainProcessPID = getpid();
     }
@@ -202,61 +153,287 @@ int Init(void)
     return status;
 };
 
-//<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
-MHAPI double GetCpuUsage(MH_PID_TYPE pid);
+/* 1.14. /proc
 
-MHAPI double GetCpuUsage(MH_PID_TYPE pid)
-{
-    fprintf(stderr, "[  ERR  ]  unimplemented\n");
-    exit(1);
-};
+Linux Filesystem Hierarchy:
+Chapter 1. Linux Filesystem Hierarchy
+See https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html
 
-MHAPI long GetMemUsage(MH_PID_TYPE pid);
+The purpose and contents of each of these files is explained below:
 
-MHAPI long GetMemUsage(MH_PID_TYPE pid)
+/proc/PID/cmdline   Command line arguments.
+/proc/PID/cpu       Current and last cpu in which it was executed.
+/proc/PID/cwd       Link to the current working directory.
+/proc/PID/environ   Values of environment variables.
+/proc/PID/exe       Link to the executable of this process.
+/proc/PID/fd        Directory, which contains all file descriptors.
+/proc/PID/maps      Memory maps to executables and library files.
+/proc/PID/mem       Memory held by this process.
+/proc/PID/root      Link to the root directory of this process.
+/proc/PID/stat      Process status.
+/proc/PID/statm     Process memory status information.
+/proc/PID/status    Process status in human readable form.
+
+Should you wish to know more, the man page for proc describes each of the files
+associated with a running process ID in far greater detail.
+Even though files appear to be of size 0, examining their contents reveals
+otherwise:
+# cat status
+*/
+
+/*
+ attr/
+ cwd/
+ fd/
+ fdinfo/
+ map_files/
+ net/
+ ns/
+ root/
+ task/
+ arch_status
+ autogroup
+ auxv
+ cgroup
+ clear_refs
+ cmdline
+ comm
+ coredump_filter
+ cpuset
+ environ
+ exe@
+ gid_map
+ io
+ ksm_merging_pages
+ ksm_stat
+ limits
+ loginuid
+ maps
+ mem
+ mountinfo
+ mounts
+ mountstats
+ numa_maps
+ oom_adj
+ oom_score
+v
+1/54 H 2024-07-07 12:12 dr-xr-xr-x 0B
+*/
+
+//-----------------------------------------------------------------------------
+// Module specific function declarations
+//-----------------------------------------------------------------------------
+
+int RunMain(void);
+
+MHAPI double GetCpuUsage(pid_t pid);
+MHAPI long   GetMemUsage(pid_t pid);
+
+MHAPI void LogProcLimits(pid_t pid);
+MHAPI void NoOp(void); // Placeholder function that does nothing.
+
+
+#if MEMHOLD_YAGNI
+MHAPI void PanicUnimplemented(void);
+#endif /* if MEMHOLD_YAGNI */
+
+
+//-----------------------------------------------------------------------------
+// Module specific function implementations
+//-----------------------------------------------------------------------------
+
+MHAPI void NoOp(void) {}
+
+
+// See also: ~
+//   - snprintf(path, sizeof(path), "/proc/%d/status", pid);
+//     /proc/[pid]/status:
+//       While primarily used for memory information, it does contain some CPU-related fields:
+//
+//       Threads: Number of threads in the process
+//       voluntary_ctxt_switches and nonvoluntary_ctxt_switches: Context switch counts
+//
+MHAPI void LogProcLimits(pid_t pid)
 {
     long status = -1;
 
+    // /proc
+    // NOTE: The file doesn't actually contain any data; it just acts as a
+    // pointer to where the actual process information resides.
+    // See https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html
     char path[256];
-    snprintf(path, sizeof(path), "/proc/%d/status", pid);
+    snprintf(path, sizeof(path), "/proc/%d/limits", pid);  // Choices: cpuset
+                                                           //
+    fprintf(stdout, "[ INFO ]  PID: %d  %s\n", pid, path); //> path = /proc/2014/cpuset
 
     FILE *file = fopen(path, "r"); //> stream or NULL
-    /* EXIT STATUS
-           file  will  exit  with 0 if the operation was successful or >0 if an error was encountered.  The
-           following errors cause diagnostic messages, but don't affect the program exit code (as POSIX re‐
-           quires), unless -E is specified:
-                 •   A file cannot be found
-                 •   There is no permission to read a file
-                 •   The file type cannot be determined
-    */
-    // printf("*file = %p\n", file);
 
     if (!file)
     {
-        // [ ERR! ]  failed to open status file. file: (nil)
-        // zsh: segmentation fault (core dumped)  ./memhold $(pgrep clang)
-
         fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
-        // perror("[ ERR! ]  failed to open status file");
         status = -1;
         goto ioError;
     }
 
     char line[356];
+    int  lineCount = 0;
+
+    while (fgets(line, sizeof(line), file))
+    {
+        if (memhold.flagVerbose)
+        {
+            lineCount += 1;
+            fprintf(stdout, "[ INFO ]  PID: %d  \t| %2d ~ %s", pid, lineCount, line);
+        }
+    }
+
+    status = fclose(file);
+
+    if ((status != 0))
+    {
+        perror("[ !ERR ]  failed to close status file");
+        goto ioError;
+    }
+
+    return;
+
+ioError:
+
+    return;
+}
+
+
+
+// For processes using popen use: ~ "ps -p %d -o %%cpu --no-headers"
+//
+// /proc/[pid]/stat:
+// This file contains more detailed CPU usage data. The relevant fields are:
+//
+// utime: User mode CPU time
+// stime: Kernel mode CPU time
+MHAPI double GetCpuUsage(pid_t pid)
+{
+    long status = -1;
+    char path[256];
+    snprintf(path, sizeof(path), "/proc/%d/stat", pid); // Choices: cpuset
+
+
+    FILE *file = fopen(path, "r"); //> stream or NULL
+
+    if (!file)
+    {
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+        status = -1;
+        goto ioError;
+    }
+
+    long cpuUsage      = -1; // Result
+    long cpuUsageUtime = -1;
+    long cpuUsageStime = -1;
+
+    char line[356];
+    int  lineCount = 0;
+
+#if 0
+   // Skip the first 13 fields
+    for (int i = 0; i < 13; i++) {
+        fscanf(file, "%*s");
+    }
+
+    fscanf(file, "%llu %llu", &utime, &stime);
+    fclose(file);
+#endif /* if 0 */
+
+    // Split fields in output of /proc/<pid>/stat that are presented as a series
+    // of numbers and values separated by spaces.
+    //----------------------------------------------------------------------------------
+    const int MAX_TOKENS_CONSUMED_COUNT = 30; // Prevent infinite loops in inner while loop
+
+    while (fgets(line, sizeof(line), file))
+    {
+        char *token                = strtok(line, " "); // Divide S into tokens separated by characters in DELIM.
+        int   tokenConsumedCounter = 1;
+
+        while (token != NULL)
+        {
+            if (tokenConsumedCounter >= MAX_TOKENS_CONSUMED_COUNT) break;
+
+            if (tokenConsumedCounter == MH_UTIME_FIELD_INDEX) cpuUsageUtime = strtol(token, NULL, 10);
+            if (tokenConsumedCounter == MH_STIME_FIELD_INDEX) cpuUsageStime = strtol(token, NULL, 10);
+
+// DEBUG
+#if 0
+            printf("tokens[%d] = %s\n", tokenConsumedCounter, token);
+#endif /* if 0 */
+
+            token = strtok(NULL, " ");
+
+            tokenConsumedCounter += 1;
+        }
+    }
+
+    if ((cpuUsageUtime != -1) && (cpuUsageStime != -1)) cpuUsage = (cpuUsageUtime + cpuUsageStime);
+    //----------------------------------------------------------------------------------
+
+    status = fclose(file); // Cleanup
+
+    if ((status != 0))
+    {
+        perror("[ !ERR ]  failed to close status file");
+        goto ioError;
+    }
+
+    return cpuUsage;
+
+ioError:
+
+    return status;
+};
+
+
+MHAPI long GetMemUsage(pid_t pid)
+{
+    long status = -1;
+
+    char path[256];
+
+    // For processes using popen use: ~ "ps -p %d -o rss --no-headers"
+    snprintf(path, sizeof(path), "/proc/%d/status", pid); // Choices: status, mem
+
+    FILE *file = fopen(path, "r"); //> stream or NULL
+
+    if (!file) // [ ERR! ]  failed to open status file. file: (nil)
+    {          // zsh: segmentation fault (core dumped)  ./memhold $(pgrep clang)
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+        status = -1;
+        goto ioError;
+    }
+
+
+    char line[356];
     long memoryUsage = -1;
 
+    /*
+    VmRSS stands for Virtual Memory Resident Set Size.
+
+    VmRSS shows the amount of physical memory (RAM) that a process is
+    currently using. This includes:
+
+      - The process's code
+      - Its data
+      - Shared libraries that are currently loaded into RAM
+    */
     while (fgets(line, sizeof(line), file))
     {
         if (strncmp(line, "VmRSS:", 6) == 0)
         {
             sscanf(line + 6, "%ld", &memoryUsage);
+            status = 0; // Success
             break;
         }
     }
-    status = 0; // Success
 
-    // Cleanup
-    status = fclose(file);
+    status = fclose(file); // Cleanup
 
     if (status != 0)
     {
@@ -266,30 +443,30 @@ MHAPI long GetMemUsage(MH_PID_TYPE pid)
 
     return memoryUsage;
 
-    // NOTE(Lloyd): @label NOT USED YET
-#if 0
-
-cleanupError:
-    status = fclose(file);
-
-    if (status != 0) perror("[ ERR! ]  failed to close status file");
-#endif /* if 0 */
-
 ioError:
+
     return status;
 };
+
+#if MEMHOLD_YAGNI
+MHAPI void PanicUnimplemented(void) { UNIMPLEMENTED; }
+#endif /* if MEMHOLD_YAGNI */
 
 //-----------------------------------------------------------------------------
 // IT'S SHOWTIME                                                       ^_^
 //-----------------------------------------------------------------------------
 
-int RunMain()
+int RunMain(void)
 {
     int status = 0; // EXIT_SUCCESS
 
     // Log module information to stdout
-    //-------------------------------------------------------------------------
-    if (memhold.flagVerbose) fprintf(stdout, "[  OK  ]  <PID> %d\n", memhold.userProcessPID);
+    //----------------------------------------------------------------------------------
+    if (memhold.flagVerbose)
+    {
+        fprintf(stdout, "[  OK  ]  <PID> %d\n", memhold.userProcessPID);
+        LogProcLimits(memhold.userProcessPID);
+    }
 
     if (memhold.flagLog)
     {
@@ -308,10 +485,10 @@ int RunMain()
         // Memhold: stats
         fprintf(stdout, "[ INFO ]  Version: %d.%d.%d\n", MEMHOLD_VERSION_MAJOR, MEMHOLD_VERSION_MINOR, MEMHOLD_VERSION_PATCH);
     }
-    //-------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
 
     // Prepare main loop
-    //-------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
     if (memhold.flagVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 2: Monitor processes >>>\n\n");
 
     char cmdGetProcName[256];
@@ -326,93 +503,61 @@ int RunMain()
     size_t cpuUsageThisFrame = 0;
     size_t memUsageThisFrame = 0;
 
+#if 0 && MEMHOLD_YAGNI
+    //
     // Prepare command statements
-    {
-        int stackAllocCmd = (sizeof(cmdCPU) + sizeof(cmdMEM) + sizeof(cmdGetProcName)); //> 768
-        int bytesSoFar    = 0;
-        bytesSoFar += snprintf(cmdCPU, sizeof(cmdCPU), "ps -p %d -o %%cpu --no-headers", memhold.userProcessPID);
-        bytesSoFar += snprintf(cmdMEM, sizeof(cmdMEM), "ps -p %d -o rss --no-headers", memhold.userProcessPID);
-        bytesSoFar += snprintf(cmdGetProcName, sizeof(cmdGetProcName), "ps aux | grep %d", memhold.userProcessPID);
-        assert(bytesSoFar >= 64 && bytesSoFar <= stackAllocCmd); //> 79 >= 64
+    //
 
-        //
-        // TEMP LOG to stdout Process Name
-        //
+    int stackAllocCmd = (sizeof(cmdCPU) + sizeof(cmdMEM) + sizeof(cmdGetProcName)); //> 768
+    int bytesSoFar    = 0;
 
-#if 0
+    bytesSoFar += snprintf(cmdCPU, sizeof(cmdCPU), "ps -p %d -o %%cpu --no-headers", memhold.userProcessPID);
+    bytesSoFar += snprintf(cmdMEM, sizeof(cmdMEM), "ps -p %d -o rss --no-headers", memhold.userProcessPID);
+    bytesSoFar += snprintf(cmdGetProcName, sizeof(cmdGetProcName), "ps aux | grep %d", memhold.userProcessPID);
+    assert(bytesSoFar >= 64 && bytesSoFar <= stackAllocCmd); //> 79 >= 64
 
-        {
-            int ret = system(cmdGetProcName);
+    #if 0            // TEMP LOG to stdout Process Name
+        int ret = system(cmdGetProcName);
+        if (ret != 0) {
+            char msg[256];
+            snprintf(msg, sizeof(msg), "[ ERR! ]  failed to execute command. system call returned: %d", ret);
+            perror(msg);
+            exit(1);
+        };
+    #endif           /* if 0 */
 
-            if (ret != 0)
-            {
-                char msg[256]; // *note:* 'system' declared in stdlib.h
-                snprintf(msg, sizeof(msg), "[ ERR! ]  failed to execute command. system call returned: %d", ret);
-                perror(msg);
-                exit(1);
-            };
-        }
-
-#else
-
-        {
-            const int CMD_MAX = 1035;
-            int       pstatus;
-            FILE     *pipefp;
-            char      cmd[CMD_MAX];
-
-            pipefp = popen(cmdGetProcName, "r");
-
-            if (pipefp == NULL)
-            {
-                perror("[ ERR! ]  failed to execute popen for getting process name via its PID");
-                exit(1);
-            }
-
-            int cntr = 0;
-
-            /* 
-            clang-format off
-                [  OK  ] [0]: user       2007  0.0  2.4 808912 96252 ?        Ssl  Jul04   0:06 /nix/store/r813aa9qb8rh3jhq6089hfcgqqj3zps9-rsibreak-0.12.13/bin/rsibreak
-                [  OK  ] [1]: user     113341  0.0  0.0   3416  1856 pts/0    S    08:57   0:00 ./memhold 2007
-                [  OK  ] [2]: user     113342  0.0  0.0 223700  3480 pts/0    S    08:57   0:00 sh -c -- ps aux | grep 2007
-                [  OK  ] [3]: user     113344  0.0  0.0 222724  2572 pts/0    S    08:57   0:00 grep 2007
-                pstatus = 0
-            clang-format on
-            */
-            while (fgets(cmd, CMD_MAX, pipefp) != NULL)
-            {
-                fprintf(stdout, "[  OK  ] [%d]: %s", cntr, cmd);
-                cntr++;
-            }
-
-            pstatus = pclose(pipefp);
-
-            if (pstatus == -1)
-            {
-                // todo
-                perror("[ ERR! ] pclose");
-            }
-            else
-            {
-
-    #if MEMHOLD_SLOW
-
-                // TODO: use macros (From examples in popen() are marvelous articles?)
-
-                fprintf(stdout, "[ INFO ] pclose returned status for: %s\n", cmdGetProcName);
-
-    #endif /* if MEMHOLD_SLOW */
-            }
-        }
-
-#endif /* if 0 */
+    const int CMD_MAX = 1035;
+    int       pstatus;
+    FILE     *pipefp;
+    char      cmd[CMD_MAX];
+    pipefp = popen(cmdGetProcName, "r");
+    if (pipefp == NULL) {
+        perror("[ ERR! ]  failed to execute popen for getting process name via its PID");
+        exit(1);
     }
-    //-------------------------------------------------------------------------
+
+    int cntr = 0;
+    while (fgets(cmd, CMD_MAX, pipefp) != NULL) {
+        cntr++;
+        fprintf(stdout, "[  OK  ] [%d]: %s", cntr, cmd);
+    }
+
+    pstatus = pclose(pipefp);
+    if (pstatus == -1) perror("[ ERR! ] pclose"); // todo
+    #if MEMHOLD_SLOW // TODO: use macros (From examples in popen() are marvelous articles?)
+    else fprintf(stdout, "[ INFO ] pclose returned status for: %s\n", cmdGetProcName);
+    #endif           /* if MEMHOLD_SLOW */
+
+#endif /* if MEMHOLD_YAGNI */
+    //----------------------------------------------------------------------------------
 
     // Run main loop
-    //-------------------------------------------------------------------------
-    int loopCounter = 0;
+    //----------------------------------------------------------------------------------
+    int                loopCounter = 0;
+    double             cpuPercent  = 0;
+    unsigned long long cpuTime1, cpuTime2;
+    unsigned int       cpuWaitASecond = 1;
+
 
     while (1)
     {
@@ -429,25 +574,52 @@ int RunMain()
 #endif
 
         // Log process usage.
-        //---------------------------------------------------------------------
-        {
-            memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
+        // Similar to procs. And somewhat like top, htop, btop (but not ncurses like)
+        //----------------------------------------------------------------------------------
+        //
+        // cpuUsage_         = GetCpuUsage(memhold.userProcessPID);
+        memUsageThisFrame = GetMemUsage(memhold.userProcessPID);
 
-            if (memhold.flagVerbose)
-            { // Similar to procs, top, htop, btop
-                fprintf(stdout, "[ INFO ]  PID: %d  MEM: %zuK  \t%ld\n", memhold.userProcessPID, memUsageThisFrame, clock());
-            }
+        if (memhold.flagVerbose)
+        {
+            fprintf(stdout, "[ INFO ]  PID: %d  CPU: %3.6f%%  \t%ld\n", memhold.userProcessPID, cpuPercent, clock());
+            fprintf(stdout, "[ INFO ]  PID: %d  MEM: %8zuK  \t%ld\n", memhold.userProcessPID, memUsageThisFrame, clock());
         }
-        //---------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
 
         // Pause this frame (2s per frame by default.)
-        sleep(memhold.refreshSeconds);
+        //----------------------------------------------------------------------------------
+        { // Wait for 1 second
+            cpuTime1 = GetCpuUsage(memhold.userProcessPID);
+            sleep(cpuWaitASecond);
+            cpuTime2 = GetCpuUsage(memhold.userProcessPID);
+        }
+
+        // Calculate CPU usage
+        //
+        // We use sysconf(_SC_CLK_TCK) to get the number of clock ticks per
+        // second, which allows us to convert from clock ticks to seconds.
+        // @sysconf: Get the value of the system variable NAME. _SC_CLK_TCK:
+        // Type: `int`  Value = `2`
+        //
+        cpuPercent = (1.0 * (cpuTime2 - cpuTime1)) / sysconf(_SC_CLK_TCK); // Multiply by 1.0 to avoid precision loss
+                                                                           // while dividing in next instruction
+
+#if 0
+        // Disabled as the value is too small and seems to be double of CPU% in
+        // btop for the running user process.
+        cpuPercent /= 100.0;
+#endif /* if 0 */
+
+        // Ensure the loop waited for total `memhold.refreshSeconds` seconds
+        if (cpuWaitASecond < memhold.refreshSeconds) { sleep(memhold.refreshSeconds - cpuWaitASecond); }
+        //----------------------------------------------------------------------------------
     }
     // end while (1)
-    //-------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
 
     // Unload program
-    //-------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
     // NOTE(Lloyd): Unload more data or free memory here... (e.g. ML_FREE(...))
     // ...
 
@@ -456,7 +628,7 @@ int RunMain()
         fprintf(stdout, "\n[ INFO ]  <<< Stage 3: Cleanup and Exit >>>\n\n");
         fprintf(stdout, "[ INFO ]  took %.2fs\n", loopCounter * memhold.refreshSeconds);
     }
-    //-------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
 
     return status;
 };
@@ -464,54 +636,87 @@ int RunMain()
 // Main entry point of the program.
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
         exit(1);
     }
 
+
     // Declare main functions scoped variables
-    int         status;
-    MH_PID_TYPE procPID;
+    //----------------------------------------------------------------------------------
+    int status;
+    //----------------------------------------------------------------------------------
 
-    { // Write stdout program name and version
-        memhold.apiVersion = MEMHOLD_VERSION;
-        fprintf(stdout, "memhold %s\n", memhold.apiVersion);
-    }
 
-    { // Parse args and ensure a valid process PID is passed.
-        if (tmpArgVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
-
-        char *pid = argv[1];                // argv[1] is stdout of `$ pgrep lua`
-        procPID   = (MH_PID_TYPE)atoi(pid); // This will panic either way.
-                                            //
-        if (!(procPID >= 0))                // If is invalid (not a number or integer.)
+    // Parse args and ensure a valid process PID is passed.
+    //----------------------------------------------------------------------------------
+    if (!(argc < 2))
+    {
+        switch (argc - 1)
         {
-            fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
-            fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", procPID);
-            status = 1;
-            goto cleanupError;
+
+        case 2:
+            if (strcmp(argv[2], "--verbose") == 0) { gVerbose = true; }
+            else gVerbose = false;
+            break;
+
+        default: break;
         }
     }
 
-    { // Initialize module
-        status = Init();
+    // Convert argv[1] (<PID>: stdout of `$ pgrep lua`) to a long integer.
+    gProcPID = (pid_t)(strtol(argv[1], NULL, 10));
 
-        if (status != 0)
-        {
-            fprintf(stderr, "[ ERR! ]  failed to initialize module\n");
-            goto cleanupError;
-        }
+    // <<<<<<< HOW TO FIGURE OUT WHAT A VALID PID IS???? >>>>>>
+    // If is invalid (not a number or integer.) then
+    if (!(gProcPID >= 0))
+    {
+        fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
+        fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", gProcPID);
+        status = 1;
 
-        memhold.userProcessPID = procPID;
+        goto cleanupError;
     }
+    //----------------------------------------------------------------------------------
+
+
+    // Write stdout program name and version
+    //----------------------------------------------------------------------------------
+    fprintf(stdout, "%s %s\n", MEMHOLD_ID, MEMHOLD_VERSION);
+
+    if (gVerbose)
+    {
+        fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
+        {
+            fprintf(stdout, "[ INFO ]  ");
+            for (int i = 0; i < argc; i++)
+                fprintf(stdout, "%s ", argv[i]);
+            fprintf(stdout, "\n");
+        }
+        fprintf(stdout, "[ INFO ]  Verbose: %s\n", gVerbose ? "true" : "false");
+    }
+    //----------------------------------------------------------------------------------
+
+
+    // Initialize module
+    //----------------------------------------------------------------------------------
+    status = Init();
+
+    if (status != 0)
+    {
+        fprintf(stderr, "[ ERR! ]  failed to initialize module\n");
+
+        goto cleanupError;
+    }
+    //----------------------------------------------------------------------------------
 
     // Begin memhold hot loop.
+    //----------------------------------------------------------------------------------
     status = RunMain();
+    //----------------------------------------------------------------------------------
 
 cleanupError:
 
     return status; // EXIT_SUCCESS
 }
-
-// BOT

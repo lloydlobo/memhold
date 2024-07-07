@@ -1,19 +1,17 @@
 # file: Makefile
 
-# TOP
-
-.PHONY: all clean summary test
-
+# fd -e c -e h . | entr -cprs 'make -j4 ctags'
+#
 # debug: NOTE(Lloyd): Use -g or -ggdb3 flag in CFLAGS. Omit -s flag.
 #	$ gf2 ./memhold $(pgrep emacs)
 # 	$ gdb ./memhold $(pgrep emacs)
 
+.PHONY: all clean summary test
 
 
 BINARY = memhold
 
 # Process name to memhold
-#
 PROCN = waybar 
 
 SRCS = memhold.c
@@ -39,7 +37,6 @@ DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
 
 
 
-
 # Usage: ~
 #   + make memhold
 #
@@ -47,8 +44,6 @@ DFLAGS = -DMEMHOLD_SLOW=0 -DMEMHOLD_YAGNI=0
 #   + cs50 Makefile guide
 $(BINARY): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDLIBS) $(DFLAGS)
-
-
 
 
 bench:
@@ -70,7 +65,7 @@ format:
 #   + make run PROCN=tmux
 #
 run:
-	@pgrep $(PROCN) | xargs -I _ ./$(BINARY) _
+	@pgrep $(PROCN) | xargs -I _ ./$(BINARY) _ --verbose
 
 summary:
 	@dust --ignore-directory .git
@@ -86,6 +81,3 @@ test:
 #
 watch_build_run:
 	./scripts/watch_build_run.sh
-
-
-# BOT

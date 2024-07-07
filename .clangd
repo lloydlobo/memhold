@@ -1,0 +1,38 @@
+# file: clangd ################################################################
+#
+#   ROBUST: ~
+#
+#       CompileFlags:
+#         Add: 
+#           - -I${NIX_LUAJIT}/include/luajit-2.1/
+#           - -I${NIX_GLIBC_DEV}/include
+#           - -L${NIX_LUAJIT}/lib/
+#           - -lluajit-5.1
+#           - -lm
+#           - -ldl
+#
+#     NOTE: ${NIX_LUAJIT} and ${NIX_GLIBC_DEV} are environment variables that
+#     should be set by your Nix environment. They provide paths that
+#     dynamically resolve to the correct locations within the Nix store.
+#
+#
+###############################################################################
+
+
+CompileFlags:
+  Add: 
+    # - -I/nix/store/h9zhmg609kzll30m4csars7rdkww73iy-luajit-2.1.1693350652/include/luajit-2.1/
+    - -I/nix/store/sn88dlknj7plns5wck2pg2ir0by6qi4y-glibc-2.38-44-dev/include
+    # - -L/nix/store/h9zhmg609kzll30m4csars7rdkww73iy-luajit-2.1.1693350652/lib/
+    # - -lluajit-5.1
+    - -lm
+    - -ldl
+
+# For files: ~
+#   $ fd . '/nix/store' | rg glibc
+#
+# For directories: ~
+#   $ dir /nix/store | rg glibc --glob dev
+#   $ dir /nix/store | rg glibc | rg dev
+#   $ dir /nix/store | rg glibc | rg dev | head
+#   $ dir /nix/store | rg glibc | rg dev | head --lines 1

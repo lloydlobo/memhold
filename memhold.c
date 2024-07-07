@@ -5,6 +5,60 @@
  *  memhold 0.1
  *
  *
+ *
+ *           ✦ ❯ ./memhold $(pgrep clang)
+ *           memhold 0.1
+ *
+ *           [ INFO ]  <<< Stage 1: Initialize program >>>
+ *
+ *           [  OK  ]  <PID> 77100
+ *           [ INFO ]  [ user ]
+ *           [ INFO ]  PID: 77100
+ *           [ INFO ]  Threshold CPU: 50.000000
+ *           [ INFO ]  Threshold MEM: 10240
+ *           [ INFO ]  Refresh: 2.00s (memhold)
+ *           [ INFO ]  [ memhold ]
+ *           [ INFO ]  PID: 77183
+ *           [ INFO ]  Version: 0.1.0
+ *
+ *           [ INFO ]  <<< Stage 2: Monitor processes >>>
+ *
+ *           [  OK  ] [0]: lloyd      77100  1.3  0.8 435860 34876 ?        Ssl  11:46   0:00 /home/lloyd/.local/share/nvim/mason/bin/clangd
+ *           [  OK  ] [1]: lloyd      77183  0.0  0.0   3400  1932 pts/6    S+   11:46   0:00 ./memhold 77100
+ *           [  OK  ] [2]: lloyd      77184  0.0  0.0 223700  3548 pts/6    S+   11:46   0:00 sh -c -- ps aux | grep 77100
+ *           [  OK  ] [3]: lloyd      77186  0.0  0.0 222724  2696 pts/6    S+   11:46   0:00 grep 77100
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       1302
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       1532
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       1773
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       1985
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       2185
+ *           *file = 0x5607e7b0c8d0
+ *           [ INFO ]  PID: 77100  MEM: 34876K       2435
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2591
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2760
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        2926
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3003
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3179
+ *           *file = (nil)
+ *           [ ERR! ]  failed to open status file. file: (nil)
+ *           [ INFO ]  PID: 77100  MEM: 18446744073709551615K        3351
+ *
+ *
  *  20240704144247UTC
  *      ==48754== Command: ./memhold 2007
  *      [ INFO ]  took 8.00s
@@ -61,14 +115,11 @@
 // Some constants
 //-----------------------------------------------------------------------------
 
-/**
- * variable `MAX_HOT_LOOP_COUNT`
- *
- * Type: `const int`
- * Value = `256 (0x100)`
- * 2s refresh cycle per loop
- */
-static const int MAX_HOT_LOOP_COUNT = (1 << 8);
+// 2s refresh cycle per loop
+static const int MAX_HOT_LOOP_COUNT = (1 << 8); //> `256 (0x100)` (1 << 8)
+
+// Limit fopen for file at path: `char path[256]; snprintf(path, sizeof(path), "/proc/%d/status", pid);`
+static const int MAX_RETRIES_FILE_NOT_FOUND = (1 << 3); //> `8 (0x100)` (1 << 3)
 
 //-----------------------------------------------------------------------------
 // DATA STRUCTURESSSSS
@@ -97,10 +148,12 @@ typedef struct Memhold
 //-----------------------------------------------------------------------------
 // Global variables
 //-----------------------------------------------------------------------------
+// TODO: All declared global variables, must be initialized. Even if it is 0 again.
 
-Memhold     memhold = {0};
-MH_PID_TYPE procPID;
-bool        tmpArgVerbose = true; // NOTE(Lloyd): Set this later to `memhold.flagVerbose`
+Memhold memhold = {0};
+
+bool       tmpArgVerbose    = false;
+static int cntrFopenRetries = 0;
 
 //-----------------------------------------------------------------------------
 // FUNCTIONSSSS
@@ -131,6 +184,24 @@ MHAPI Memhold InitMemhold(void)
     return result;
 }
 
+int Init(void);
+
+int Init(void)
+{
+    int status = -1; // SUCCESS
+
+    cntrFopenRetries = 0;
+    tmpArgVerbose    = true; // NOTE(Lloyd): Set this later to `memhold.flagVerbose`
+
+    memhold = InitMemhold();
+    {
+        memhold.memholdMainProcessPID = getpid();
+    }
+    status = 0;
+
+    return status;
+};
+
 //<<<<<<<<<<<<<<<<<<TODO>>>>>>>>>>>>>>>>>
 MHAPI double GetCpuUsage(MH_PID_TYPE pid);
 
@@ -149,14 +220,26 @@ MHAPI long GetMemUsage(MH_PID_TYPE pid)
     char path[256];
     snprintf(path, sizeof(path), "/proc/%d/status", pid);
 
-    FILE *file = fopen(path, "r");
-    printf("file.status = %d\n", file.status);
+    FILE *file = fopen(path, "r"); //> stream or NULL
+    /* EXIT STATUS
+           file  will  exit  with 0 if the operation was successful or >0 if an error was encountered.  The
+           following errors cause diagnostic messages, but don't affect the program exit code (as POSIX re‐
+           quires), unless -E is specified:
+                 •   A file cannot be found
+                 •   There is no permission to read a file
+                 •   The file type cannot be determined
+    */
+    // printf("*file = %p\n", file);
 
     if (!file)
     {
-        perror("[ ERR! ]  failed to open status file");
+        // [ ERR! ]  failed to open status file. file: (nil)
+        // zsh: segmentation fault (core dumped)  ./memhold $(pgrep clang)
+
+        fprintf(stderr, "[ ERR! ]  failed to open status file. file: %p\n", file);
+        // perror("[ ERR! ]  failed to open status file");
         status = -1;
-        goto cleanupError;
+        goto ioError;
     }
 
     char line[356];
@@ -183,10 +266,14 @@ MHAPI long GetMemUsage(MH_PID_TYPE pid)
 
     return memoryUsage;
 
+    // NOTE(Lloyd): @label NOT USED YET
+#if 0
+
 cleanupError:
     status = fclose(file);
 
     if (status != 0) perror("[ ERR! ]  failed to close status file");
+#endif /* if 0 */
 
 ioError:
     return status;
@@ -198,14 +285,7 @@ ioError:
 
 int RunMain()
 {
-    int success = 0; // EXIT_SUCCESS
-
-    // Initialize module
-    //-------------------------------------------------------------------------
-    memhold                       = InitMemhold();
-    memhold.userProcessPID        = procPID;
-    memhold.memholdMainProcessPID = getpid();
-    //-------------------------------------------------------------------------
+    int status = 0; // EXIT_SUCCESS
 
     // Log module information to stdout
     //-------------------------------------------------------------------------
@@ -320,7 +400,7 @@ int RunMain()
 
                 // TODO: use macros (From examples in popen() are marvelous articles?)
 
-                fprintf(stdout, "[ INFO ] pclose returned success for: %s\n", cmdGetProcName);
+                fprintf(stdout, "[ INFO ] pclose returned status for: %s\n", cmdGetProcName);
 
     #endif /* if MEMHOLD_SLOW */
             }
@@ -378,7 +458,7 @@ int RunMain()
     }
     //-------------------------------------------------------------------------
 
-    return success;
+    return status;
 };
 
 // Main entry point of the program.
@@ -390,29 +470,48 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // Declare main functions scoped variables
+    int         status;
+    MH_PID_TYPE procPID;
+
     { // Write stdout program name and version
         memhold.apiVersion = MEMHOLD_VERSION;
         fprintf(stdout, "memhold %s\n", memhold.apiVersion);
     }
 
-    // Parse args and ensure a valid process PID is passed.
-    //-------------------------------------------------------------------------
-    if (tmpArgVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
+    { // Parse args and ensure a valid process PID is passed.
+        if (tmpArgVerbose) fprintf(stdout, "\n[ INFO ]  <<< Stage 1: Initialize program >>>\n\n");
 
-    char *pid = argv[1];                // argv[1] is stdout of `$ pgrep lua`
-    procPID   = (MH_PID_TYPE)atoi(pid); // This will panic either way.
-                                        //
-    if (!(procPID >= 0))                // If is invalid (not a number or integer.)
-    {
-        fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
-        fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", procPID);
-        exit(1);
+        char *pid = argv[1];                // argv[1] is stdout of `$ pgrep lua`
+        procPID   = (MH_PID_TYPE)atoi(pid); // This will panic either way.
+                                            //
+        if (!(procPID >= 0))                // If is invalid (not a number or integer.)
+        {
+            fprintf(stderr, "Usage: %s <PID>\n", argv[0]);
+            fprintf(stderr, "expected valid PID. For example: 105815\n. got: %i", procPID);
+            status = 1;
+            goto cleanupError;
+        }
     }
-    //-------------------------------------------------------------------------
+
+    { // Initialize module
+        status = Init();
+
+        if (status != 0)
+        {
+            fprintf(stderr, "[ ERR! ]  failed to initialize module\n");
+            goto cleanupError;
+        }
+
+        memhold.userProcessPID = procPID;
+    }
 
     // Begin memhold hot loop.
-    int success = RunMain(); // 0 is success.
-    return success;          // EXIT_SUCCESS
+    status = RunMain();
+
+cleanupError:
+
+    return status; // EXIT_SUCCESS
 }
 
 // BOT

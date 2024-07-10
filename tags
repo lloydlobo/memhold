@@ -1,102 +1,106 @@
-ARRAY_SIZE	memhold.h	/^    #define ARRAY_SIZE(a) (sizeof((a)) \/ sizeof((a/
-CLITERAL	memhold.h	/^        #define CLITERAL(type) type$/
-CLITERAL	memhold.h	/^        #define CLITERAL(type) (type)$/
-COLOR_ERROR	memhold.c	61
-COLOR_INFO	memhold.c	59
-COLOR_SUCCESS	memhold.c	62
-COLOR_WARN	memhold.c	60
-Color	memhold.h	159
-Color	memhold.h	166
-ConfigFlags	memhold.h	195
-FLAG_BORDERLESS_WINDOWED_MODE	memhold.h	191
-FLAG_FULLSCREEN_MODE	memhold.h	179
-FLAG_INTERLACED_HINT	memhold.h	193
-FLAG_MSAA_4X_HINT	memhold.h	192
-FLAG_VSYNC_HINT	memhold.h	178
-FLAG_WINDOW_ALWAYS_RUN	memhold.h	187
-FLAG_WINDOW_HIDDEN	memhold.h	182
-FLAG_WINDOW_HIGHDPI	memhold.h	189
-FLAG_WINDOW_MAXIMIZED	memhold.h	184
-FLAG_WINDOW_MINIMIZED	memhold.h	183
-FLAG_WINDOW_MOUSE_PASSTHROUGH	memhold.h	190
-FLAG_WINDOW_RESIZABLE	memhold.h	180
-FLAG_WINDOW_TOPMOST	memhold.h	186
-FLAG_WINDOW_TRANSPARENT	memhold.h	188
-FLAG_WINDOW_UNDECORATED	memhold.h	181
-FLAG_WINDOW_UNFOCUSED	memhold.h	185
+ARRAY_SIZE	memhold.h	/^        #define ARRAY_SIZE(a) (sizeof((a)) \/ sizeo/
+CLITERAL	memhold.h	/^                #define CLITERAL(type) type$/
+CLITERAL	memhold.h	/^                #define CLITERAL(type) (type)$/
+COLOR_ERROR	memhold.c	116
+COLOR_INFO	memhold.c	114
+COLOR_SUCCESS	memhold.c	117
+COLOR_WARN	memhold.c	115
+Color	memhold.h	157
+Color	memhold.h	163
+ConfigFlags	memhold.h	191
+FLAG_BORDERLESS_WINDOWED_MODE	memhold.h	187
+FLAG_FULLSCREEN_MODE	memhold.h	175
+FLAG_INTERLACED_HINT	memhold.h	189
+FLAG_MSAA_4X_HINT	memhold.h	188
+FLAG_VSYNC_HINT	memhold.h	174
+FLAG_WINDOW_ALWAYS_RUN	memhold.h	183
+FLAG_WINDOW_HIDDEN	memhold.h	178
+FLAG_WINDOW_HIGHDPI	memhold.h	185
+FLAG_WINDOW_MAXIMIZED	memhold.h	180
+FLAG_WINDOW_MINIMIZED	memhold.h	179
+FLAG_WINDOW_MOUSE_PASSTHROUGH	memhold.h	186
+FLAG_WINDOW_RESIZABLE	memhold.h	176
+FLAG_WINDOW_TOPMOST	memhold.h	182
+FLAG_WINDOW_TRANSPARENT	memhold.h	184
+FLAG_WINDOW_UNDECORATED	memhold.h	177
+FLAG_WINDOW_UNFOCUSED	memhold.h	181
 GetCpuUsage	memhold.c	/^MHAPI long GetCpuUsage(pid_t pid)$/
 GetMemUsage	memhold.c	/^MHAPI long GetMemUsage(pid_t pid)$/
 GetSystemUptimeSec	memhold.c	/^MHAPI long GetSystemUptimeSec(pid_t pid)$/
 Init	memhold.c	/^int Init(void)$/
 InitMemhold	memhold.c	/^MHAPI Memhold InitMemhold(void)$/
-LOG_ALL	memhold.h	201
-LOG_DEBUG	memhold.h	203
-LOG_ERROR	memhold.h	206
-LOG_FATAL	memhold.h	207
-LOG_INFO	memhold.h	204
-LOG_NONE	memhold.h	208
-LOG_TRACE	memhold.h	202
-LOG_WARNING	memhold.h	205
-LoadFileDataCallback	memhold.h	216
-LoadFileTextCallback	memhold.h	218
+LOG_ALL	memhold.h	196
+LOG_DEBUG	memhold.h	198
+LOG_ERROR	memhold.h	201
+LOG_FATAL	memhold.h	202
+LOG_INFO	memhold.h	199
+LOG_NONE	memhold.h	203
+LOG_TRACE	memhold.h	197
+LOG_WARNING	memhold.h	200
+LoadFileDataCallback	memhold.h	211
+LoadFileTextCallback	memhold.h	213
 LogProcLimits	memhold.c	/^MHAPI void LogProcLimits(pid_t pid)$/
-MAX_HOT_LOOP_COUNT	memhold.c	71
-MAX_RETRIES_FILE_NOT_FOUND	memhold.c	74
+LogUserProcessNameSlow	memhold.c	/^void LogUserProcessNameSlow(char cmdGetProcName[25/
+LogUserProcessNameSlow	memhold.c	/^void             LogUserProcessNameSlow(char cmdGe/
+MAX_HOT_LOOP_COUNT	memhold.c	126
+MAX_HOT_LOOP_COUNT	memhold.c	128
+MAX_RETRIES_FILE_NOT_FOUND	memhold.c	132
 MEMHOLD_COPYRIGHT	memhold.h	26
 MEMHOLD_H	memhold.h	10
 MEMHOLD_ID	memhold.h	23
+MEMHOLD_PROFILE	memhold.c	95
 MEMHOLD_RELEASE	memhold.h	22
 MEMHOLD_RELEASEFULL	memhold.h	25
-MEMHOLD_SLOW	memhold.c	43
+MEMHOLD_SLOW	memhold.c	100
 MEMHOLD_VERSION	memhold.h	21
 MEMHOLD_VERSIONFULL	memhold.h	24
 MEMHOLD_VERSION_MAJOR	memhold.h	17
 MEMHOLD_VERSION_MINOR	memhold.h	18
 MEMHOLD_VERSION_NUM	memhold.h	20
 MEMHOLD_VERSION_PATCH	memhold.h	19
-MEMHOLD_YAGNI	memhold.c	49
+MEMHOLD_YAGNI	memhold.c	105
 MHAPI	memhold.h	42
 MHAPI	memhold.h	45
 MHAPI	memhold.h	52
-MH_CALLOC	memhold.h	/^        #define MH_CALLOC(n, sz) calloc(n, sz)$/
-MH_FREE	memhold.h	/^        #define MH_FREE(ptr) free(ptr)$/
-MH_MALLOC	memhold.h	/^        #define MH_MALLOC(sz) malloc(sz)$/
+MH_CALLOC	memhold.h	/^                #define MH_CALLOC(n, sz) calloc(n,/
+MH_FREE	memhold.h	/^                #define MH_FREE(ptr) free(ptr)$/
+MH_MALLOC	memhold.h	/^                #define MH_MALLOC(sz) malloc(sz)$/
 MH_MEMORY_THRESHOLD	memhold.h	61
-MH_REALLOC	memhold.h	/^        #define MH_REALLOC(ptr, sz) realloc(ptr, s/
-Memhold	memhold.c	81
-Memhold	memhold.c	97
+MH_REALLOC	memhold.h	/^                #define MH_REALLOC(ptr, sz) reallo/
+Memhold	memhold.c	139
+Memhold	memhold.c	150
 Mmemhold	memhold.c	/^int main(int argc, char *argv[])$/
 NoOp	memhold.c	/^MHAPI void NoOp(void) {}$/
 PROCESS_STAT_STARTTIME_INDEX	memhold.h	68
 PROCESS_STAT_STIME_INDEX	memhold.h	67
 PROCESS_STAT_UTIME_INDEX	memhold.h	66
 PanicUnimplemented	memhold.c	/^MHAPI void PanicUnimplemented(void) { UNIMPLEMENTE/
-RL_BOOL_TYPE	memhold.h	154
+RL_BOOL_TYPE	memhold.h	152
 RunMain	memhold.c	/^int RunMain(void)$/
-SaveFileDataCallback	memhold.h	217
-SaveFileTextCallback	memhold.h	219
-TraceLogCallback	memhold.h	215
-TraceLogLevel	memhold.h	210
+SaveFileDataCallback	memhold.h	212
+SaveFileTextCallback	memhold.h	214
+TraceLogCallback	memhold.h	210
+TraceLogLevel	memhold.h	205
 UNIMPLEMENTED	memhold.h	130
-__declspec	memhold.h	/^                #define __declspec(x) __attribute_/
-a	memhold.h	164
-apiID	memhold.c	86
-apiVersion	memhold.c	87
-b	memhold.h	163
-bool	memhold.h	147
-bool	memhold.h	152
-cntrFopenRetries	memhold.c	109
-cpuThreshold	memhold.c	91
-false	memhold.h	149
-flagLog	memhold.c	83
-flagVerbose	memhold.c	84
-g	memhold.h	162
-gProcPID	memhold.c	107
-gVerbose	memhold.c	106
-memThreshold	memhold.c	92
-memhold	memhold.c	104
-memholdMainProcessPID	memhold.c	95
-r	memhold.h	161
-refreshSeconds	memhold.c	89
-true	memhold.h	150
-userProcessPID	memhold.c	94
+__declspec	memhold.h	/^                                #define __declspec/
+a	memhold.h	161
+apiID	memhold.c	142
+apiVersion	memhold.c	143
+b	memhold.h	160
+bool	memhold.h	146
+bool	memhold.h	150
+cntrFopenRetries	memhold.c	162
+cpuThreshold	memhold.c	145
+false	memhold.h	147
+flagLog	memhold.c	140
+flagVerbose	memhold.c	141
+g	memhold.h	159
+gProcPID	memhold.c	160
+gVerbose	memhold.c	159
+memThreshold	memhold.c	146
+memhold	memhold.c	157
+memholdMainProcessPID	memhold.c	148
+r	memhold.h	158
+refreshSeconds	memhold.c	144
+true	memhold.h	148
+userProcessPID	memhold.c	147

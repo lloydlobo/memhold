@@ -5,103 +5,103 @@
 **
 */
 
-
 #ifndef MEMHOLD_H
-    #define MEMHOLD_H
+        #define MEMHOLD_H
 
 
-    #include <stdarg.h> // Required for: va_list - Only used by TraceLogCallback
-    #include <stdio.h>  // Required for: fprintf() - Only used by macro UNIMPLEMENTED
+        #include <assert.h> // Required for: static_assert()[NOTE: @notimplemented]
+        #include <stdarg.h> // Required for: va_list - Only used by TraceLogCallback
+        #include <stddef.h> // Required for: ptrdiff_t, size_t - Only used to define base types(isize, usize)
+        #include <stdio.h>  // Required for: fprintf() - Only used by macro UNIMPLEMENTED
+        #include <time.h>   // Required for: clock()[as arg in fprintf - NOTE: @notimplemented]
 
 
-    #define MEMHOLD_VERSION_MAJOR 0
-    #define MEMHOLD_VERSION_MINOR 1
-    #define MEMHOLD_VERSION_PATCH 1
-    #define MEMHOLD_VERSION_NUM   011
-    #define MEMHOLD_VERSION       "0.1"
-    #define MEMHOLD_RELEASE       "0.1.1"
-    #define MEMHOLD_ID            "memhold"
-    #define MEMHOLD_VERSIONFULL   "memhold 0.1"
-    #define MEMHOLD_RELEASEFULL   "memhold 0.1.1"
-    #define MEMHOLD_COPYRIGHT     "..."
+        #define MEMHOLD_VERSION_MAJOR 0
+        #define MEMHOLD_VERSION_MINOR 1
+        #define MEMHOLD_VERSION_PATCH 1
+        #define MEMHOLD_VERSION_NUM   011
+        #define MEMHOLD_VERSION       "0.1"
+        #define MEMHOLD_RELEASE       "0.1.1"
+        #define MEMHOLD_ID            "memhold"
+        #define MEMHOLD_VERSIONFULL   "memhold 0.1"
+        #define MEMHOLD_RELEASEFULL   "memhold 0.1.1"
+        #define MEMHOLD_COPYRIGHT     "..."
 
 
-    ///
-    ////NOTE(Lloyd): The following is ported from raylib.h
-    ///
-    //
-    // Function specifiers in case library is build/used as a shared library (Windows)
-    // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
-    #if defined(_WIN32)
-        #if defined(BUILD_LIBTYPE_SHARED)
-            #if defined(__TINYC__)
-                #define __declspec(x) __attribute__((x))
+        ///
+        ////NOTE(Lloyd): The following is ported from raylib.h
+        ///
+        //
+        // Function specifiers in case library is build/used as a shared library (Windows)
+        // NOTE: Microsoft specifiers to tell compiler that symbols are imported/exported from a .dll
+        #if defined(_WIN32)
+                #if defined(BUILD_LIBTYPE_SHARED)
+                        #if defined(__TINYC__)
+                                #define __declspec(x) __attribute__((x))
+                        #endif
 
-            #endif
+                        #define MHAPI __declspec(dllexport) // We are building the library as a Win32 shared library (.dll)
 
-            #define MHAPI __declspec(dllexport) // We are building the library as a Win32 shared library (.dll)
+                #elif defined(USE_LIBTYPE_SHARED)
+                        #define MHAPI __declspec(dllimport) // We are using the library as a Win32 shared library (.dll)
 
-        #elif defined(USE_LIBTYPE_SHARED)
-            #define MHAPI __declspec(dllimport) // We are using the library as a Win32 shared library (.dll)
+                #endif
 
-        #endif
+        #endif // _WIN32
 
-    #endif // _WIN32
-
-    #ifndef MHAPI
-        #define MHAPI // Functions defined as 'extern' by default (implicit specifiers)
-
-    #endif // !MHAPI
+        #ifndef MHAPI
+                #define MHAPI // Functions defined as 'extern' by default (implicit specifiers)
+        #endif                // !MHAPI
 
 //----------------------------------------------------------------------------------
 // Some basic Defines
 //----------------------------------------------------------------------------------
 
-    // Memory threshold in kilobytes (for example, 10 MB)
-    #define MH_MEMORY_THRESHOLD 10240
+        // Memory threshold in kilobytes (for example, 10 MB)
+        #define MH_MEMORY_THRESHOLD 10240
 
-    // /proc/PID/state
-    //      Process status.
-    //      See https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html
-    #define PROCESS_STAT_UTIME_INDEX     14
-    #define PROCESS_STAT_STIME_INDEX     15
-    #define PROCESS_STAT_STARTTIME_INDEX 22
+        // /proc/PID/state
+        //      Process status.
+        //      See https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html
+        #define PROCESS_STAT_UTIME_INDEX     14
+        #define PROCESS_STAT_STIME_INDEX     15
+        #define PROCESS_STAT_STARTTIME_INDEX 22
 
-    ///
-    /// NOTE(Lloyd): The following is ported from raylib.h
-    ///
+        ///
+        /// NOTE(Lloyd): The following is ported from raylib.h
+        ///
 
-    // Allow custom memory allocators
-    // NOTE: Require recompiling raylib sources
-    #ifndef MH_MALLOC
-        #define MH_MALLOC(sz) malloc(sz)
-    #endif
-    #ifndef MH_CALLOC
-        #define MH_CALLOC(n, sz) calloc(n, sz)
-    #endif
-    #ifndef MH_REALLOC
-        #define MH_REALLOC(ptr, sz) realloc(ptr, sz)
-    #endif
-    #ifndef MH_FREE
-        #define MH_FREE(ptr) free(ptr)
-    #endif
+        // Allow custom memory allocators
+        // NOTE: Require recompiling raylib sources
+        #ifndef MH_MALLOC
+                #define MH_MALLOC(sz) malloc(sz)
+        #endif
+        #ifndef MH_CALLOC
+                #define MH_CALLOC(n, sz) calloc(n, sz)
+        #endif
+        #ifndef MH_REALLOC
+                #define MH_REALLOC(ptr, sz) realloc(ptr, sz)
+        #endif
+        #ifndef MH_FREE
+                #define MH_FREE(ptr) free(ptr)
+        #endif
 
 
-    // NOTE: MSVC C++ compiler does not support compound literals (C99 feature)
-    // Plain structures in C++ (without constructors) can be initialized with { }
-    // This is called aggregate initialization (C++11 feature)
-    #if defined(__cplusplus)
-        #define CLITERAL(type) type
-    #else
-        #define CLITERAL(type) (type)
-    #endif
+        // NOTE: MSVC C++ compiler does not support compound literals (C99 feature)
+        // Plain structures in C++ (without constructors) can be initialized with { }
+        // This is called aggregate initialization (C++11 feature)
+        #if defined(__cplusplus)
+                #define CLITERAL(type) type
+        #else
+                #define CLITERAL(type) (type)
+        #endif
 
-    // Some compilers (mostly macos clang) default to C++98,
-    // where aggregate initialization can't be used
-    // So, give a more clear error stating how to fix this
-    #if !defined(_MSC_VER) && (defined(__cplusplus) && __cplusplus < 201103L)
-        #error "C++11 or later is required. Add -std=c++11"
-    #endif
+        // Some compilers (mostly macos clang) default to C++98,
+        // where aggregate initialization can't be used
+        // So, give a more clear error stating how to fix this
+        #if !defined(_MSC_VER) && (defined(__cplusplus) && __cplusplus < 201103L)
+                #error "C++11 or later is required. Add -std=c++11"
+        #endif
 
 
 /*
@@ -123,16 +123,48 @@
 // Macro Magic
 //----------------------------------------------------------------------------------
 
-    // Classic macro like `len(collection)` in lang that start with 'p'
-    #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a[0])))
+        // STATIC_ASSERT is ported from the excellent gb(C header) libraries by Ginger Bill
+        #ifndef MH_STATIC_ASSERT
+                #define MH_STATIC_ASSERT3(condition, message) typedef char static_assertion_##message[(!!(condition)) * 2 - 1]
+                #define MH_STATIC_ASSERT2(condition, line)    MH_STATIC_ASSERT3(condition, static_assertion_at_line_##line)
+                #define MH_STATIC_ASSERT1(condition, line)    MH_STATIC_ASSERT2(condition, line)
+                #define MH_STATIC_ASSERT(condition)           MH_STATIC_ASSERT1(condition, __LINE__)
+        #endif
 
-    // Uses Tsoding's (aka @rexim) implementation for UNIMPLEMENTED macro
-    #define UNIMPLEMENTED                                                                                                                                      \
-        do                                                                                                                                                     \
-        {                                                                                                                                                      \
-            fprintf(stderr, "%s:%d: %s is not implemented yet\n", __FILE__, __LINE__, __func__);                                                               \
-            abort();                                                                                                                                           \
-        } while (0)
+        // Classic macro like `len(collection)` in lang that start with 'p'
+        #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a[0])))
+
+        #ifndef MH_SIZE_OF
+                #define MH_SIZE_OF(x) (isize)(sizeof((x))
+        #endif
+
+        // @Unused: Enum Type tuple
+        #define ENUMTUPLE(x)                                                                                                                                   \
+                {                                                                                                                                              \
+                        (x), (#x)                                                                                                                              \
+                }
+
+        // Used for creating label when calling macro TRACELEVELTOTUPLES
+        #define STRINGIFY(x) #x
+
+        // Used exclusively for `const TraceLogLevelTuple TRACE_LOG_LEVELS[MAX_LOG_COUNT]`
+        // Example: ~
+        // ```c
+        // struct LogLevelEnumTuple logTuples = TRACELEVELTOTUPLES(LOG_ALL, STRINGIFY(log));
+        // ```
+        #define TRACELEVELTOTUPLES(enumExpr, enumLabel)                                                                                                        \
+                {                                                                                                                                              \
+                        (enumExpr), (#enumExpr), (enumLabel)                                                                                                   \
+                }
+
+        // Uses Tsoding's (aka @rexim) implementation for UNIMPLEMENTED macro
+        #define UNIMPLEMENTED                                                                                                                                  \
+                do {                                                                                                                                           \
+                        fprintf(stderr, "%s:%d: %s is not implemented yet\n", __FILE__, __LINE__, __func__);                                                   \
+                        abort();                                                                                                                               \
+                } while (0)
+
+        #define WRITELOG(stream, message) (#message)
 
 
 //----------------------------------------------------------------------------------
@@ -140,30 +172,59 @@
 //----------------------------------------------------------------------------------
 
 // Boolean type
-    #if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
-        #include <stdbool.h>
+        #if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
+                #include <stdbool.h>
 
-    #elif !defined(__cplusplus) && !defined(bool)
-typedef enum bool
-{
-    false = 0,
-    true  = !false
-
+        #elif !defined(__cplusplus) && !defined(bool)
+typedef enum bool {
+        false = 0,
+        true  = !false,
 } bool;
 
-        #define RL_BOOL_TYPE
-
-    #endif
+                #define RL_BOOL_TYPE
+        #endif
 
 // Color, 4 components, R8G8B8A8 (32bit)
-typedef struct Color
-{
-    unsigned char r; // Color red value
-    unsigned char g; // Color green value
-    unsigned char b; // Color blue value
-    unsigned char a; // Color alpha value
+typedef struct Color {
+        unsigned char r; // Color red value
+        unsigned char g; // Color green value
+        unsigned char b; // Color blue value
+        unsigned char a; // Color alpha value
 
 } Color;
+
+//----------------------------------------------------------------------------------
+// Base Types
+//----------------------------------------------------------------------------------
+
+        #include <stdint.h> // Required for: int16_t, int32_t, int64_t, int8_t, uint16_t and 3 more
+
+typedef int8_t  i8;  // signed char
+typedef int16_t i16; // short
+typedef int32_t i32; // int
+typedef int64_t i64; // long
+
+typedef uint8_t  u8;  // unsigned char
+typedef uint16_t u16; // unsigned short
+typedef uint32_t u32; // unsigned int
+typedef uint64_t u64; // unsigned long or size_t: uint64_t is about having exactly 64 bits.
+
+MH_STATIC_ASSERT(sizeof(u8) == sizeof(i8));
+
+typedef size_t    usize; // unsigned long or size_t: Same as uint64_t is about having exactly 64 bits.
+typedef ptrdiff_t isize;
+
+MH_STATIC_ASSERT(sizeof(usize) == sizeof(isize));
+
+typedef float  f32;
+typedef double f64;
+
+MH_STATIC_ASSERT(((sizeof(f32) == 4) && "f32 is not 32 bits"));
+MH_STATIC_ASSERT(((sizeof(f64) == 8) && "f64 is not 64 bits"));
+
+typedef unsigned long long ullong;      // unsigned long long: unsigned long long is about having the largest native unsigned integer.
+typedef unsigned long long u64_atleast; // unsigned long long: unsigned long long is about having the largest native unsigned integer.
+
 
 //----------------------------------------------------------------------------------
 // Enumerators Definition
@@ -173,41 +234,45 @@ typedef struct Color
 //
 // NOTE: Every bit registers one state (use it with bit masks)
 // By default all flags are set to 0
-typedef enum
-{
-    FLAG_VSYNC_HINT               = 0x00000040, // Set to try enabling V-Sync on GPU
-    FLAG_FULLSCREEN_MODE          = 0x00000002, // Set to run program in fullscreen
-    FLAG_WINDOW_RESIZABLE         = 0x00000004, // Set to allow resizable window
-    FLAG_WINDOW_UNDECORATED       = 0x00000008, // Set to disable window decoration (frame and buttons)
-    FLAG_WINDOW_HIDDEN            = 0x00000080, // Set to hide window
-    FLAG_WINDOW_MINIMIZED         = 0x00000200, // Set to minimize window (iconify)
-    FLAG_WINDOW_MAXIMIZED         = 0x00000400, // Set to maximize window (expanded to monitor)
-    FLAG_WINDOW_UNFOCUSED         = 0x00000800, // Set to window non focused
-    FLAG_WINDOW_TOPMOST           = 0x00001000, // Set to window always on top
-    FLAG_WINDOW_ALWAYS_RUN        = 0x00000100, // Set to allow windows running while minimized
-    FLAG_WINDOW_TRANSPARENT       = 0x00000010, // Set to allow transparent framebuffer
-    FLAG_WINDOW_HIGHDPI           = 0x00002000, // Set to support HighDPI
-    FLAG_WINDOW_MOUSE_PASSTHROUGH = 0x00004000, // Set to support mouse passthrough, only supported when FLAG_WINDOW_UNDECORATED
-    FLAG_BORDERLESS_WINDOWED_MODE = 0x00008000, // Set to run program in borderless windowed mode
-    FLAG_MSAA_4X_HINT             = 0x00000020, // Set to try enabling MSAA 4X
-    FLAG_INTERLACED_HINT          = 0x00010000  // Set to try enabling interlaced video format (for V3D)
+typedef enum {
+        FLAG_VSYNC_HINT               = 0x00000040, // Set to try enabling V-Sync on GPU
+        FLAG_FULLSCREEN_MODE          = 0x00000002, // Set to run program in fullscreen
+        FLAG_WINDOW_RESIZABLE         = 0x00000004, // Set to allow resizable window
+        FLAG_WINDOW_UNDECORATED       = 0x00000008, // Set to disable window decoration (frame and buttons)
+        FLAG_WINDOW_HIDDEN            = 0x00000080, // Set to hide window
+        FLAG_WINDOW_MINIMIZED         = 0x00000200, // Set to minimize window (iconify)
+        FLAG_WINDOW_MAXIMIZED         = 0x00000400, // Set to maximize window (expanded to monitor)
+        FLAG_WINDOW_UNFOCUSED         = 0x00000800, // Set to window non focused
+        FLAG_WINDOW_TOPMOST           = 0x00001000, // Set to window always on top
+        FLAG_WINDOW_ALWAYS_RUN        = 0x00000100, // Set to allow windows running while minimized
+        FLAG_WINDOW_TRANSPARENT       = 0x00000010, // Set to allow transparent framebuffer
+        FLAG_WINDOW_HIGHDPI           = 0x00002000, // Set to support HighDPI
+        FLAG_WINDOW_MOUSE_PASSTHROUGH = 0x00004000, // Set to support mouse passthrough, only supported when FLAG_WINDOW_UNDECORATED
+        FLAG_BORDERLESS_WINDOWED_MODE = 0x00008000, // Set to run program in borderless windowed mode
+        FLAG_MSAA_4X_HINT             = 0x00000020, // Set to try enabling MSAA 4X
+        FLAG_INTERLACED_HINT          = 0x00010000  // Set to try enabling interlaced video format (for V3D)
 
 } ConfigFlags;
 
-// Trace log level
 // NOTE: Organized by priority level
-typedef enum
-{
-    LOG_ALL = 0, // Display all logs
-    LOG_TRACE,   // Trace logging, intended for internal use only
-    LOG_DEBUG,   // Debug logging, used for internal debugging, it should be disabled on release builds
-    LOG_INFO,    // Info logging, used for program execution info
-    LOG_WARNING, // Warning logging, used on recoverable failures
-    LOG_ERROR,   // Error logging, used on unrecoverable failures
-    LOG_FATAL,   // Fatal logging, used to abort program: exit(EXIT_FAILURE)
-    LOG_NONE     // Disable logging
-
+typedef enum TraceLogLevel {
+        LOG_ALL = 0, // Display all logs
+        LOG_TRACE,   // Trace logging, intended for internal use only
+        LOG_DEBUG,   // Debug logging, used for internal debugging, it should be disabled on release builds
+        LOG_INFO,    // Info logging, used for program execution info
+        LOG_WARNING, // Warning logging, used on recoverable failures
+        LOG_ERROR,   // Error logging, used on unrecoverable failures
+        LOG_FATAL,   // Fatal logging, used to abort program: exit(EXIT_FAILURE)
+        LOG_NONE,    // Disable logging
+        /* etc. */
+        MAX_LOG_COUNT
 } TraceLogLevel;
+
+typedef struct LogLevelEnumTuple {
+        enum TraceLogLevel level;
+        const char        *name;
+        const char        *label;
+} TraceLogLevelTuple;
 
 
 // Callbacks to hook some internal functions
@@ -218,7 +283,6 @@ typedef bool (*SaveFileDataCallback)(const char *fileName, void *data, int dataS
 typedef char *(*LoadFileTextCallback)(const char *fileName);                          // FileIO: Load text data
 typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);               // FileIO: Save text data
                                                                                       //
-
 //------------------------------------------------------------------------------------
 // Global Variables Definition
 //------------------------------------------------------------------------------------
@@ -229,74 +293,73 @@ typedef bool (*SaveFileTextCallback)(const char *fileName, char *text);         
 // Window and Graphics Device Functions (Module: core)
 //------------------------------------------------------------------------------------
 
-    #if defined(__cplusplus)
+        #if defined(__cplusplus)
 
-extern "C"
-{ /* `extern "C"` Prevents name mangling of functions */
+extern "C" { /* `extern "C"` Prevents name mangling of functions */
 
-    #endif
+        #endif
 
-    // Window-related functions
-    MHAPI void InitWindow(int width, int height, const char *title); // Initialize window and OpenGL context
-    MHAPI void CloseWindow(void);                                    // Close window and unload OpenGL context
-    MHAPI bool WindowShouldClose(void);                              // Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
-                                                                     //
-    // Timing-related functions
-    MHAPI void   SetTargetFPS(int fps); // Set target FPS (maximum)
-    MHAPI float  GetFrameTime(void);    // Get time in seconds for last frame drawn (delta time)
-    MHAPI double GetTime(void);         // Get elapsed time in seconds since InitWindow()
-    MHAPI int    GetFPS(void);          // Get current FPS
+// Window-related functions
+MHAPI void InitWindow(int width, int height, const char *title); // Initialize window and OpenGL context
+MHAPI void CloseWindow(void);                                    // Close window and unload OpenGL context
+MHAPI bool WindowShouldClose(void);                              // Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
+                                                                 //
+// Timing-related functions
+MHAPI void   SetTargetFPS(int fps); // Set target FPS (maximum)
+MHAPI float  GetFrameTime(void);    // Get time in seconds for last frame drawn (delta time)
+MHAPI double GetTime(void);         // Get elapsed time in seconds since InitWindow()
+MHAPI int    GetFPS(void);          // Get current FPS
 
-    // Custom frame control functions
-    // NOTE: Those functions are intended for advance users that want full control over the frame processing
-    // By default EndDrawing() does this job: draws everything + SwapScreenBuffer() + manage frame timing + PollInputEvents()
-    // To avoid that behaviour and control frame processes manually, enable in config.h: SUPPORT_CUSTOM_FRAME_CONTROL
-    MHAPI void SwapScreenBuffer(void);   // Swap back buffer with front buffer (screen drawing)
-    MHAPI void PollInputEvents(void);    // Register all input events
-    MHAPI void WaitTime(double seconds); // Wait for some time (halt program execution)
+// Custom frame control functions
+// NOTE: Those functions are intended for advance users that want full control over the frame processing
+// By default EndDrawing() does this job: draws everything + SwapScreenBuffer() + manage frame timing + PollInputEvents()
+// To avoid that behaviour and control frame processes manually, enable in config.h: SUPPORT_CUSTOM_FRAME_CONTROL
+MHAPI void SwapScreenBuffer(void);   // Swap back buffer with front buffer (screen drawing)
+MHAPI void PollInputEvents(void);    // Register all input events
+MHAPI void WaitTime(double seconds); // Wait for some time (halt program execution)
 
-    // Random values generation functions
-    MHAPI void SetRandomSeed(unsigned int seed);                         // Set the seed for the random number generator
-    MHAPI int  GetRandomValue(int min, int max);                         // Get a random value between min and max (both included)
-    MHAPI int *LoadRandomSequence(unsigned int count, int min, int max); // Load random values sequence, no values repeated
-    MHAPI void UnloadRandomSequence(int *sequence);                      // Unload random values sequence
+// Random values generation functions
+MHAPI void SetRandomSeed(unsigned int seed);                         // Set the seed for the random number generator
+MHAPI int  GetRandomValue(int min, int max);                         // Get a random value between min and max (both included)
+MHAPI int *LoadRandomSequence(unsigned int count, int min, int max); // Load random values sequence, no values repeated
+MHAPI void UnloadRandomSequence(int *sequence);                      // Unload random values sequence
 
-    // Misc. functions
-    MHAPI void TakeScreenshot(const char *fileName); // Takes a screenshot of current screen (filename extension defines format)
-    MHAPI void SetConfigFlags(unsigned int flags);   // Setup init configuration flags (view FLAGS)
-    MHAPI void OpenURL(const char *url);             // Open URL with default system browser (if available)
+// Misc. functions
+MHAPI void TakeScreenshot(const char *fileName); // Takes a screenshot of current screen (filename extension defines format)
+MHAPI void SetConfigFlags(unsigned int flags);   // Setup init configuration flags (view FLAGS)
+MHAPI void OpenURL(const char *url);             // Open URL with default system browser (if available)
 
-    // NOTE: Following functions implemented in module [utils]
-    //------------------------------------------------------------------
-    MHAPI void  TraceLog(int logLevel, const char *text, ...); // Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...)
-    MHAPI void  SetTraceLogLevel(int logLevel);                // Set the current threshold (minimum) log level
-    MHAPI void *MemAlloc(unsigned int size);                   // Internal memory allocator
-    MHAPI void *MemRealloc(void *ptr, unsigned int size);      // Internal memory reallocator
-    MHAPI void  MemFree(void *ptr);                            // Internal memory free
+// NOTE: Following functions implemented in module [utils]
+//------------------------------------------------------------------
+MHAPI void  TraceLog(int logLevel, const char *text, ...); // Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...)
+MHAPI void  SetTraceLogLevel(int logLevel);                // Set the current threshold (minimum) log level
+MHAPI void *MemAlloc(unsigned int size);                   // Internal memory allocator
+MHAPI void *MemRealloc(void *ptr, unsigned int size);      // Internal memory reallocator
+MHAPI void  MemFree(void *ptr);                            // Internal memory free
 
-    // Set custom callbacks
-    // WARNING: Callbacks setup is intended for advance users
-    MHAPI void SetTraceLogCallback(TraceLogCallback callback);         // Set custom trace log
-    MHAPI void SetLoadFileDataCallback(LoadFileDataCallback callback); // Set custom file binary data loader
-    MHAPI void SetSaveFileDataCallback(SaveFileDataCallback callback); // Set custom file binary data saver
-    MHAPI void SetLoadFileTextCallback(LoadFileTextCallback callback); // Set custom file text data loader
-    MHAPI void SetSaveFileTextCallback(SaveFileTextCallback callback); // Set custom file text data saver
+// Set custom callbacks
+// WARNING: Callbacks setup is intended for advance users
+MHAPI void SetTraceLogCallback(TraceLogCallback callback);         // Set custom trace log
+MHAPI void SetLoadFileDataCallback(LoadFileDataCallback callback); // Set custom file binary data loader
+MHAPI void SetSaveFileDataCallback(SaveFileDataCallback callback); // Set custom file binary data saver
+MHAPI void SetLoadFileTextCallback(LoadFileTextCallback callback); // Set custom file text data loader
+MHAPI void SetSaveFileTextCallback(SaveFileTextCallback callback); // Set custom file text data saver
 
-    // Files management functions
-    MHAPI unsigned char *LoadFileData(const char *fileName, int *dataSize);            // Load file data as byte array (read)
-    MHAPI void           UnloadFileData(unsigned char *data);                          // Unload file data allocated by LoadFileData()
-    MHAPI bool           SaveFileData(const char *fileName, void *data, int dataSize); // Save data to file from byte array (write), returns true on success
-    MHAPI bool           ExportDataAsCode(const unsigned char *data, int dataSize, const char *fileName); // Export data to code (.h), returns true on success
-    MHAPI char          *LoadFileText(const char *fileName);   // Load text data from file (read), returns a '\0' terminated string
-    MHAPI void           UnloadFileText(char *text);           // Unload file text data allocated by LoadFileText()
-    MHAPI bool SaveFileText(const char *fileName, char *text); // Save text data to file (write), string must be '\0' terminated, returns true on success
-    //------------------------------------------------------------------
+// Files management functions
+MHAPI unsigned char *LoadFileData(const char *fileName, int *dataSize);            // Load file data as byte array (read)
+MHAPI void           UnloadFileData(unsigned char *data);                          // Unload file data allocated by LoadFileData()
+MHAPI bool           SaveFileData(const char *fileName, void *data, int dataSize); // Save data to file from byte array (write), returns true on success
+MHAPI bool           ExportDataAsCode(const unsigned char *data, int dataSize, const char *fileName); // Export data to code (.h), returns true on success
+MHAPI char          *LoadFileText(const char *fileName);             // Load text data from file (read), returns a '\0' terminated string
+MHAPI void           UnloadFileText(char *text);                     // Unload file text data allocated by LoadFileText()
+MHAPI bool           SaveFileText(const char *fileName, char *text); // Save text data to file (write), string must be '\0' terminated, returns true on success
+                                                                     //------------------------------------------------------------------
 
-    #if defined(__cplusplus)
+        #if defined(__cplusplus)
 
 } /* end of `extern C { ...` */
 
-    #endif
+        #endif
 
 #endif // !MEMHOLD_H
 
@@ -312,7 +375,6 @@ extern "C"
 //   + ConfigFlags
 //   + TraceLogLevel
 //   + ...Callback() (*function pointers*)
-
 
 
 //

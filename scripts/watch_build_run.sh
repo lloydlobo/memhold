@@ -9,6 +9,6 @@
 # 	$ make watch_build_run
 # 	```
 
-fd --extension c --extension h . | entr -cpr xargs make build_run
+fd --extension c --extension h . | entr -cpr xargs make -j4 build-run
 
 # BOT

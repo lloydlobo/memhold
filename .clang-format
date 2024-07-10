@@ -18,8 +18,7 @@ Language:       Cpp
 # TabWidth:  4    #  <number_of_spaces_per_tab> character represents in the formatted output. It essentially defines the size or width of a tab stop. Since IndentWidth is a multiple of TabWidth, clang-format will insert exactly the number of spaces required for each indentation level.
 # UseTab: Always
 ColumnLimit: 160
-IndentWidth: 4    # <number_of_spaces_per_tab> (multiple of TabWidth)
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+IndentWidth: 8    # <number_of_spaces_per_tab> (multiple of TabWidth)
 
 #------------------------------------------------------------------------------
 # Macros
@@ -31,7 +30,8 @@ IndentPPDirectives: BeforeHash # None | AfterHash | BeforeHash
 # Rest
 #------------------------------------------------------------------------------
 # PPIndentWidth: 4 # -1 | 1, 2, ...
-BreakBeforeBraces: Allman # Custom | Attach | Linux | Mozilla | Stroustrup | Allman | Whitesmiths | GNU | Webkit
+# AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+BreakBeforeBraces: Linux # Custom | Attach | Linux | Mozilla | Stroustrup | Allman | Whitesmiths | GNU | Webkit
 PointerAlignment: Right # Left | Right | Middle
 
 #------------------------------------------------------------------------------
